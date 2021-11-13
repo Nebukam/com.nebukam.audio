@@ -29,7 +29,6 @@ namespace Nebukam.FrequencyAnalysis
         private FrequencyBandAnalyser analyzer;
 
         [Header("Analyzer settings")]
-        public float test = 0f;
         public bool smooth = true;
         public float SmoothDownRate = 100f;
         public float scale = 1f;
@@ -42,9 +41,10 @@ namespace Nebukam.FrequencyAnalysis
         // Start is called before the first frame update
         void Start()
         {
-            samplingData = new SamplingData(Presets);
+            samplingData = new SamplingData();
+            samplingData.Add(Presets);
+
             analyzer = new FrequencyBandAnalyser();
-            analyzer.samplingData = samplingData;
         }
 
         // Update is called once per frame
@@ -56,6 +56,8 @@ namespace Nebukam.FrequencyAnalysis
 
             analyzer.audioSource = source;
             analyzer.Update();
+            analyzer.UpdateSamplingData(samplingData);
+
         }
 
         private void InitGizmos()

@@ -20,7 +20,8 @@ namespace Nebukam.FrequencyAnalysis
     {
         TRIGGER, // 0f-1f
         PEAK, // 0.0f...1.0f
-        AVERAGE // 0.5f
+        AVERAGE, // 0.5f
+        SUM // Sums all values in frame.
     }
 
     public enum Tolerance

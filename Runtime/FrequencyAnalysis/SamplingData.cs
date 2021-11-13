@@ -13,20 +13,27 @@ namespace Nebukam.FrequencyAnalysis
     public class SamplingData
     {
 
-        protected SamplingDefinitionList m_list;
+        protected List<SamplingDefinitionList> m_lists = new List<SamplingDefinitionList>();
         protected Dictionary<String, float> m_data = new Dictionary<string, float>();
 
-        public SamplingDefinitionList list { get { return m_list; } }
-        public List<SamplingDefinition> definitions { get { return m_list.Definitions; } }
+        public List<SamplingDefinitionList> lists { get { return m_lists; } }
 
-        public SamplingData(SamplingDefinitionList list)
+        public SamplingData()
         {
-            m_list = list;
-            for(int i = 0, n = list.Definitions.Count; i < n; i++)
+
+        }
+
+        public void Add(SamplingDefinitionList list)
+        {
+            if(m_lists.IndexOf(list) != -1) { return; }
+
+            m_lists.Add(list);
+            for (int i = 0, n = list.Definitions.Count; i < n; i++)
             {
                 SamplingDefinition def = list.Definitions[i];
                 m_data[def.ID] = 0f;
             }
+
         }
 
         public float Get(string ID)
@@ -45,6 +52,23 @@ namespace Nebukam.FrequencyAnalysis
         public void Set(string ID, float value)
         {
             m_data[ID] = value;
+        }
+
+        public override string ToString()
+        {
+            string str = "---\n";
+            for(int j = 0; j < m_lists.Count; j++)
+            {
+                SamplingDefinitionList list = m_lists[j];
+                for (int i = 0, n = list.Definitions.Count; i < n; i++)
+                {
+                    SamplingDefinition def = list.Definitions[i];
+                    str += "" + def.ID + " = " + m_data[def.ID] + "\n";
+                }
+            }
+
+            return str;
+            
         }
 
     }

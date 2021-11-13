@@ -23,16 +23,16 @@ namespace Nebukam.FrequencyAnalysis
         protected float[] m_freqBands64;
 
         protected AudioSource m_audioSource;
-        protected SamplingData m_samplingData;
 
         public int frequencyBins { get { return m_frequencyBins; } }
 
-        public FFTWindow windowType {
+        public FFTWindow windowType
+        {
             get { return m_windowType; }
             set { m_windowType = value; }
         }
 
-        public AudioSource audioSource 
+        public AudioSource audioSource
         {
             get { return m_audioSource; }
             set { m_audioSource = value; }
@@ -41,19 +41,13 @@ namespace Nebukam.FrequencyAnalysis
         public float[] freqBands8 { get { return m_freqBands8; } }
 
         public float[] freqBands64 { get { return m_freqBands64; } }
-        
-        public SamplingData samplingData 
-        {
-            get { return m_samplingData; }
-            set { m_samplingData = value; }
-        }
 
         #endregion
 
         #region transforms
 
         protected bool m_doSmooth = true;
-        protected float m_smoothDownRate = 100f;
+        protected float m_smoothDownRate = 10f;
         protected float m_scale = 1f;
 
         public bool doSmooth
@@ -165,7 +159,7 @@ namespace Nebukam.FrequencyAnalysis
         public void Update()
         {
             //---   POPULATE SAMPLES
-            if(m_audioSource == null)
+            if (m_audioSource == null)
             {
                 for (int i = 0; i < m_samples.Length; i++)
                 {
@@ -179,12 +173,14 @@ namespace Nebukam.FrequencyAnalysis
 
                 if (m_doSmooth)
                 {
+                    float time = Time.deltaTime;
+
                     for (int i = 0; i < m_samples.Length; i++)
                     {
                         if (m_sampleBuffer[i] > m_samples[i])
                             m_samples[i] = m_sampleBuffer[i];
                         else
-                            m_samples[i] = lerp(m_samples[i], m_sampleBuffer[i], Time.deltaTime * m_smoothDownRate);
+                            m_samples[i] = lerp(m_samples[i], m_sampleBuffer[i], time * m_smoothDownRate);
                     }
                 }
                 else
@@ -195,76 +191,84 @@ namespace Nebukam.FrequencyAnalysis
                     }
                 }
 
-            }            
+            }
 
             UpdateFreqBands8();
             UpdateFreqBands64();
-            if(m_samplingData != null) { UpdateSamplingData(); }
 
         }
 
-        protected void UpdateSamplingData()
+        public void UpdateSamplingData(SamplingData samplingData)
         {
-            List<SamplingDefinition> defList = m_samplingData.definitions;
-            SamplingDefinition def;
-            for(int i = 0, n = defList.Count; i < n; i++)
+
+            List<SamplingDefinitionList> lists = samplingData.lists;
+
+            for (int l = 0, ln = lists.Count; l < ln; l++)
             {
-                def = defList[i];
-                float peak = 0f;
-                float average = 0f;
-                float _floor = def.amplitude.x;
-                float _ceiling = _floor + def.amplitude.y;
-                float finalValue = 0f;
 
-                int width = max(1, def.frequency.y);
-                int sn = clamp(def.frequency.x + width, 0, 63);
-                int reached = 0;
-
-                for (int s = def.frequency.x; s < sn; s++)
+                List<SamplingDefinition> defList = lists[l].Definitions;
+                SamplingDefinition def;
+                for (int i = 0, n = defList.Count; i < n; i++)
                 {
-                    float sampleValue = m_freqBands64[s];
-
-                    if(sampleValue >= _floor) { reached++; }
-
-                    sampleValue = clamp(sampleValue, _floor, _ceiling);
-                    float mappedValue = map(sampleValue, _floor, _ceiling, 0f, 1f);
-
-                    if(mappedValue > peak) { peak = mappedValue; }
-                    average += mappedValue;
+                    def = defList[i];
+                    samplingData.Set(def.ID, ReadDefinition(def));
+                    
                 }
-
-                average = average / ((def.frequency.y == 0 ? 1 : def.frequency.y));
-
-                if(def.range == RangeType.AVERAGE)
-                {
-                    finalValue = average;
-                }
-                else if (def.range == RangeType.PEAK)
-                {
-                    finalValue = peak;
-                }
-                else if (def.range == RangeType.TRIGGER)
-                {
-                    finalValue = peak > 0f ? 1f : 0f;
-                }
-
-                if (def.tolerance == Tolerance.STRICT && reached != width) { finalValue = 0f; }
-
-                m_samplingData.Set(def.ID, finalValue*def.scale);
 
             }
         }
 
-        public float GetBandValue(int index, Bands bands)
+        public float ReadDefinition(SamplingDefinition def)
         {
-            if (bands == Bands.EIGHT)
+
+            float peak = 0f;
+            float average = 0f;
+            float _floor = def.amplitude.x;
+            float _ceiling = _floor + def.amplitude.y;
+            float _sum = 0f;
+            float finalValue = 0f;
+
+            int width = max(1, def.frequency.y);
+            int sn = clamp(def.frequency.x + width, 0, 63);
+            int reached = 0;
+
+            for (int s = def.frequency.x; s < sn; s++)
             {
-                return m_freqBands8[index];
+                float sampleValue = m_freqBands64[s];
+
+                if (sampleValue >= _floor) { reached++; }
+
+                sampleValue = clamp(sampleValue, _floor, _ceiling);
+                float mappedValue = map(sampleValue, _floor, _ceiling, 0f, 1f);
+
+                if (mappedValue > peak) { peak = mappedValue; }
+                _sum += mappedValue;
             }
-            else
+
+            average = _sum / ((def.frequency.y == 0 ? 1 : def.frequency.y));
+
+            if (def.range == RangeType.AVERAGE)
             {
-                return m_freqBands64[index];
+                finalValue = average;
             }
+            else if (def.range == RangeType.PEAK)
+            {
+                finalValue = peak;
+            }
+            else if (def.range == RangeType.TRIGGER)
+            {
+                finalValue = peak > 0f ? 1f : 0f;
+            }
+            else if (def.range == RangeType.SUM)
+            {
+                finalValue = _sum;
+            }
+
+            if (def.tolerance == Tolerance.STRICT && reached != width) { finalValue = 0f; }
+
+
+            return finalValue * def.scale;
+
         }
 
         public float map(float s, float a1, float a2, float b1, float b2)

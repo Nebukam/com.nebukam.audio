@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72b572aa23ed0164593fa50e607140af, type: 3}
+  m_Name: SamplingDefinitions
+  m_EditorClassIdentifier: 
+  Definitions:
+  - bands: 1
+    range: 3
+    tolerance: 0
+    frequency:
+      x: 0
+      y: 4
+    amplitude:
+      x: 0.2
+      y: 0.41
+    scale: 1
+    ID: A
+    color: {r: 0, g: 0.37265134, b: 1, a: 1}
+  - bands: 1
+    range: 1
+    tolerance: 0
+    frequency:
+      x: 0
+      y: 36
+    amplitude:
+      x: 0
+      y: 0.63
+    scale: 1
+    ID: B
+    color: {r: 1, g: 0, b: 0, a: 1}
