@@ -8,6 +8,98 @@ using static Unity.Mathematics.math;
 namespace Nebukam.FrequencyAnalysis
 {
 
+    public enum RangeType
+    {
+        Trigger, // 0f-1f
+        Peak, // 0.0f...1.0f
+        Average, // 0.5f
+        Sum // Sums all values in frame.
+    }
+
+    public struct Sample
+    {
+
+        public float average;
+        public float trigger;
+        public float peak;
+        public float sum;
+
+        public RangeType range;
+
+        public bool ON { get { return trigger > 0f; } }
+
+        public static implicit operator float(Sample s)
+        {
+
+            if (s.range == RangeType.Trigger) { return s.trigger; }
+            if (s.range == RangeType.Peak) { return s.peak; }
+            if (s.range == RangeType.Average) { return s.average; }
+            if (s.range == RangeType.Sum) { return s.sum; }
+
+            return s.average;
+
+        }
+
+
+    }
+
+    public enum Bands
+    {
+        Eight, // 8
+        SixtyFour // 64
+    }
+
+    public enum Tolerance
+    {
+        Loose, // Any
+        Strict // All frequencies need to be accounted for
+    }
+
+    [System.Serializable]
+    public struct SamplingDefinition
+    {
+
+        public const float maxAmplitude8 = 3.0f;
+        public const float maxAmplitude64 = 1.0f;
+
+        [Tooltip("Band reference (8 or 64)")]
+        public Bands bands;
+
+        [Tooltip("How to process the data within the frame")]
+        public RangeType range;
+
+        [Tooltip("How tolerant is the sampling result. Strict = all frequency must have a value")]
+        public Tolerance tolerance;
+
+        [Tooltip("Horizontal start & width of the frame (limited by bands)")]
+        public int2 frequency;
+
+        [Tooltip("Vertical start & height of the frame (limited by frequency)")]
+        public float2 amplitude;
+
+        [Tooltip("Raw output scale")]
+        public float scale;
+
+        public string ID;
+
+        [Tooltip("Debug Color")]
+        public Color color;
+
+        static public void Sanitize(ref SamplingDefinition def)
+        {
+
+            def.frequency = new int2(
+                clamp(def.frequency.x, 0, 63),
+                clamp(def.frequency.y, 0, 63));
+
+            def.amplitude = new float2(
+                clamp(def.amplitude.x, 0f, 3f),
+                clamp(def.amplitude.y, 0f, 3f));
+
+        }
+
+    }
+
     public class FrequencyBandAnalyser
     {
 
@@ -82,6 +174,7 @@ namespace Nebukam.FrequencyAnalysis
             m_sampleBuffer = new float[m_frequencyBins];
         }
 
+        #region Frequency bands update
 
         protected void UpdateFreqBands8()
         {
@@ -155,7 +248,11 @@ namespace Nebukam.FrequencyAnalysis
 
         }
 
-        // Update is called once per frame
+        #endregion
+
+        /// <summary>
+        /// Update the sampling & spectrum data based from a given audioSource
+        /// </summary>
         public void Update()
         {
             //---   POPULATE SAMPLES
@@ -198,6 +295,11 @@ namespace Nebukam.FrequencyAnalysis
 
         }
 
+        /// <summary>
+        /// Update the values in the given samplingData with
+        /// the most recently computed ones
+        /// </summary>
+        /// <param name="samplingData"></param>
         public void UpdateSamplingData(SamplingData samplingData)
         {
 
@@ -212,62 +314,65 @@ namespace Nebukam.FrequencyAnalysis
                 {
                     def = defList[i];
                     samplingData.Set(def.ID, ReadDefinition(def));
-                    
+
                 }
 
             }
         }
 
-        public float ReadDefinition(SamplingDefinition def)
+        /// <summary>
+        /// Compute a single Sample data based on a given SamplingDefinition
+        /// </summary>
+        /// <param name="def"></param>
+        /// <returns></returns>
+        public Sample ReadDefinition(SamplingDefinition def)
         {
 
-            float peak = 0f;
-            float average = 0f;
+            Sample sample = new Sample();
+            sample.range = def.range;
+
+            float _peak = 0f;
             float _floor = def.amplitude.x;
             float _ceiling = _floor + def.amplitude.y;
             float _sum = 0f;
-            float finalValue = 0f;
 
-            int width = max(1, def.frequency.y);
-            int sn = clamp(def.frequency.x + width, 0, 63);
-            int reached = 0;
+            int _width = max(1, def.frequency.y);
+            int _sn = clamp(def.frequency.x + _width, 0, 63);
+            int _reached = 0;
 
-            for (int s = def.frequency.x; s < sn; s++)
+            for (int s = def.frequency.x; s < _sn; s++)
             {
                 float sampleValue = m_freqBands64[s];
 
-                if (sampleValue >= _floor) { reached++; }
+                if (sampleValue >= _floor) { _reached++; }
 
                 sampleValue = clamp(sampleValue, _floor, _ceiling);
                 float mappedValue = map(sampleValue, _floor, _ceiling, 0f, 1f);
 
-                if (mappedValue > peak) { peak = mappedValue; }
+                if (mappedValue > _peak) { _peak = mappedValue; }
                 _sum += mappedValue;
             }
 
-            average = _sum / ((def.frequency.y == 0 ? 1 : def.frequency.y));
+            float _average = _sum / ((def.frequency.y == 0 ? 1 : def.frequency.y));
 
-            if (def.range == RangeType.AVERAGE)
+            if(def.tolerance == Tolerance.Strict && _reached != _width)
             {
-                finalValue = average;
+                sample.average = 0f;
+                sample.peak = 0f;
+                sample.trigger = 0f;
+                sample.sum = 0f;
             }
-            else if (def.range == RangeType.PEAK)
+            else
             {
-                finalValue = peak;
-            }
-            else if (def.range == RangeType.TRIGGER)
-            {
-                finalValue = peak > 0f ? 1f : 0f;
-            }
-            else if (def.range == RangeType.SUM)
-            {
-                finalValue = _sum;
+                float scale = def.scale;
+
+                sample.average = _average * scale;
+                sample.peak = _peak * scale;
+                sample.trigger = (_peak > 0f ? 1f : 0f) * scale;
+                sample.sum = _sum * scale;
             }
 
-            if (def.tolerance == Tolerance.STRICT && reached != width) { finalValue = 0f; }
-
-
-            return finalValue * def.scale;
+            return sample;
 
         }
 

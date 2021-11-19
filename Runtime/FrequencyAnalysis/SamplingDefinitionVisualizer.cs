@@ -134,7 +134,7 @@ namespace Nebukam.FrequencyAnalysis
                 if (targetIndex != -1 && i != targetIndex) { continue; }
 
                 SamplingDefinition def = defList[i];
-                float ampMax = def.bands == Bands.EIGHT ? SamplingDefinition.maxAmplitude8 : SamplingDefinition.maxAmplitude64;
+                float ampMax = def.bands == Bands.Eight ? SamplingDefinition.maxAmplitude8 : SamplingDefinition.maxAmplitude64;
                 float ampStart = def.amplitude.x, ampSize = def.amplitude.y;
                 int freqStart = def.frequency.x, freqSize = def.frequency.y;
 

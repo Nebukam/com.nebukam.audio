@@ -14,7 +14,7 @@ namespace Nebukam.FrequencyAnalysis
     {
 
         protected List<SamplingDefinitionList> m_lists = new List<SamplingDefinitionList>();
-        protected Dictionary<String, float> m_data = new Dictionary<string, float>();
+        protected Dictionary<String, Sample> m_dataDic = new Dictionary<string, Sample>();
 
         public List<SamplingDefinitionList> lists { get { return m_lists; } }
 
@@ -23,6 +23,11 @@ namespace Nebukam.FrequencyAnalysis
 
         }
 
+        /// <summary>
+        /// Registers a list of sampling definition in this SamplingData object
+        /// to be updated by a FrequencyBandAnalyser
+        /// </summary>
+        /// <param name="list"></param>
         public void Add(SamplingDefinitionList list)
         {
             if(m_lists.IndexOf(list) != -1) { return; }
@@ -31,27 +36,69 @@ namespace Nebukam.FrequencyAnalysis
             for (int i = 0, n = list.Definitions.Count; i < n; i++)
             {
                 SamplingDefinition def = list.Definitions[i];
-                m_data[def.ID] = 0f;
+                m_dataDic[def.ID] = new Sample();
             }
 
         }
 
-        public float Get(string ID)
+        /// <summary>
+        /// Returns the current Sample value associated with a given ID
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <returns></returns>
+        public Sample Get(string ID)
         {
-            float result = 0f;
-            if(m_data.TryGetValue(ID, out result))
+            Sample result;
+
+            if(m_dataDic.TryGetValue(ID, out result))
             {
                 return result;
             }
             else
             {
-                return 0f;
+                return new Sample();
             }
         }
 
-        public void Set(string ID, float value)
+        /// <summary>
+        /// Tries to find a Sample associated with a given ID
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public bool TryGet(string ID, out float result)
         {
-            m_data[ID] = value;
+            Sample s;
+
+            if(m_dataDic.TryGetValue(ID, out s)) 
+            {
+                result = s;
+                return true;
+            }
+
+            result = 0f;
+            return false;
+        }
+
+        /// <summary>
+        /// Tries to find a Sample associated with a given ID
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public bool TryGet(string ID, out Sample result)
+        {
+            return m_dataDic.TryGetValue(ID, out result);
+        }
+
+        /// <summary>
+        /// Sets the value of a Sample
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="value"></param>
+        public void Set(string ID, Sample value)
+        {
+            m_dataDic[ID] = value;
         }
 
         public override string ToString()
@@ -63,7 +110,7 @@ namespace Nebukam.FrequencyAnalysis
                 for (int i = 0, n = list.Definitions.Count; i < n; i++)
                 {
                     SamplingDefinition def = list.Definitions[i];
-                    str += "" + def.ID + " = " + m_data[def.ID] + "\n";
+                    str += "" + def.ID + " = " + m_dataDic[def.ID] + "\n";
                 }
             }
 
