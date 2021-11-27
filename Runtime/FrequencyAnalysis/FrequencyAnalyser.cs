@@ -3,113 +3,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
+using System.Numerics;
+using System;
 
-
-namespace Nebukam.FrequencyAnalysis
+namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public enum RangeType
-    {
-        Trigger, // 0f-1f
-        Peak, // 0.0f...1.0f
-        Average, // 0.5f
-        Sum // Sums all values in frame.
-    }
-
-    public struct Sample
-    {
-
-        public float average;
-        public float trigger;
-        public float peak;
-        public float sum;
-
-        public RangeType range;
-
-        public bool ON { get { return trigger > 0f; } }
-
-        public static implicit operator float(Sample s)
-        {
-
-            if (s.range == RangeType.Trigger) { return s.trigger; }
-            if (s.range == RangeType.Peak) { return s.peak; }
-            if (s.range == RangeType.Average) { return s.average; }
-            if (s.range == RangeType.Sum) { return s.sum; }
-
-            return s.average;
-
-        }
-
-
-    }
-
-    public enum Bands
-    {
-        Eight, // 8
-        SixtyFour // 64
-    }
-
-    public enum Tolerance
-    {
-        Loose, // Any
-        Strict // All frequencies need to be accounted for
-    }
-
-    [System.Serializable]
-    public struct SamplingDefinition
-    {
-
-        public const float maxAmplitude8 = 3.0f;
-        public const float maxAmplitude64 = 1.0f;
-
-        [Tooltip("Band reference (8 or 64)")]
-        public Bands bands;
-
-        [Tooltip("How to process the data within the frame")]
-        public RangeType range;
-
-        [Tooltip("How tolerant is the sampling result. Strict = all frequency must have a value")]
-        public Tolerance tolerance;
-
-        [Tooltip("Horizontal start & width of the frame (limited by bands)")]
-        public int2 frequency;
-
-        [Tooltip("Vertical start & height of the frame (limited by frequency)")]
-        public float2 amplitude;
-
-        [Tooltip("Raw output scale")]
-        public float scale;
-
-        public string ID;
-
-        [Tooltip("Debug Color")]
-        public Color color;
-
-        static public void Sanitize(ref SamplingDefinition def)
-        {
-
-            def.frequency = new int2(
-                clamp(def.frequency.x, 0, 63),
-                clamp(def.frequency.y, 0, 63));
-
-            def.amplitude = new float2(
-                clamp(def.amplitude.x, 0f, 3f),
-                clamp(def.amplitude.y, 0f, 3f));
-
-        }
-
-    }
-
-    public class FrequencyBandAnalyser
+    public class FrequencyAnalyser
     {
 
         #region data
 
         protected int m_frequencyBins = 512;
+        protected uint m_fwdBufferSize = 1024;
         protected FFTWindow m_windowType = FFTWindow.BlackmanHarris;
 
-        float[] m_samples;
-        float[] m_sampleBuffer;
+        protected float[] m_samples;
+        protected float[] m_sampleBuffer;
+
+        protected float[] m_fwdWindowCoefs;
+        protected float[] m_multiChannelSamples;
+        protected float[] m_fwdSpectrumChunks;
+        protected float m_scaleFactor;
 
         protected float[] m_freqBands8;
         protected float[] m_freqBands64;
@@ -133,6 +48,8 @@ namespace Nebukam.FrequencyAnalysis
         public float[] freqBands8 { get { return m_freqBands8; } }
 
         public float[] freqBands64 { get { return m_freqBands64; } }
+
+        public FFT m_FFT = new FFT();
 
         #endregion
 
@@ -162,9 +79,11 @@ namespace Nebukam.FrequencyAnalysis
 
         #endregion
 
-        public FrequencyBandAnalyser(int bins = 512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
+        public FrequencyAnalyser(int bins = 512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
         {
-            m_frequencyBins = 512;// bins;
+
+            m_frequencyBins = bins;
+            m_fwdBufferSize = (uint)(m_frequencyBins * 2);
             m_windowType = FFTW;
 
             m_freqBands8 = new float[8];
@@ -172,6 +91,14 @@ namespace Nebukam.FrequencyAnalysis
 
             m_samples = new float[m_frequencyBins];
             m_sampleBuffer = new float[m_frequencyBins];
+
+            m_fwdWindowCoefs = DSP.Window.Coefficients(DSP.Window.Type.Hanning, m_fwdBufferSize);
+            m_scaleFactor = DSP.Window.ScaleFactor.Signal(m_fwdWindowCoefs);
+            m_multiChannelSamples = new float[m_fwdBufferSize * 2]; //assume 2-channel audio first
+            m_fwdSpectrumChunks = new float[m_fwdBufferSize];
+
+            m_FFT.Initialize(m_fwdBufferSize);
+
         }
 
         #region Frequency bands update
@@ -251,22 +178,26 @@ namespace Nebukam.FrequencyAnalysis
         #endregion
 
         /// <summary>
-        /// Update the sampling & spectrum data based from a given audioSource
+        /// Update the sampling values & spectrum data based on the current audioSource & clip
         /// </summary>
-        public void Update()
+        /// <param name="forward"></param>
+        public void Analyze(float forward = 0f)
         {
             //---   POPULATE SAMPLES
+            forward = abs(forward);
+
             if (m_audioSource == null)
             {
                 for (int i = 0; i < m_samples.Length; i++)
-                {
                     m_samples[i] = 0f;
-                }
+
             }
             else
             {
-
-                m_audioSource.GetSpectrumData(m_sampleBuffer, 0, m_windowType);
+                if (forward == 0f)
+                    m_audioSource.GetSpectrumData(m_sampleBuffer, 0, m_windowType);
+                else
+                    GetForwardSpectrumData(m_audioSource.clip, m_sampleBuffer, forward + audioSource.time);
 
                 if (m_doSmooth)
                 {
@@ -296,27 +227,32 @@ namespace Nebukam.FrequencyAnalysis
         }
 
         /// <summary>
+        /// Update the sampling values & spectrum data based on the current audioSource
+        /// </summary>
+        /// <param name="time"></param>
+        public void AnalyzeAt(AudioClip clip, float time)
+        {
+
+        }
+
+        /// <summary>
         /// Update the values in the given samplingData with
         /// the most recently computed ones
         /// </summary>
-        /// <param name="samplingData"></param>
-        public void UpdateSamplingData(SamplingData samplingData)
+        /// <param name="frameDictionary"></param>
+        public void UpdateFrameData(FrameDataDictionary frameDictionary)
         {
+            List<FrequencyFrameList> frameList = frameDictionary.lists;
 
-            List<SamplingDefinitionList> lists = samplingData.lists;
-
-            for (int l = 0, ln = lists.Count; l < ln; l++)
+            for (int l = 0, ln = frameList.Count; l < ln; l++)
             {
-
-                List<SamplingDefinition> defList = lists[l].Definitions;
-                SamplingDefinition def;
+                List<FrequencyFrame> defList = frameList[l].Frames;
+                FrequencyFrame def;
                 for (int i = 0, n = defList.Count; i < n; i++)
                 {
                     def = defList[i];
-                    samplingData.Set(def.ID, ReadDefinition(def));
-
+                    frameDictionary.Set(def.ID, ReadDefinition(def));
                 }
-
             }
         }
 
@@ -325,7 +261,7 @@ namespace Nebukam.FrequencyAnalysis
         /// </summary>
         /// <param name="def"></param>
         /// <returns></returns>
-        public Sample ReadDefinition(SamplingDefinition def)
+        public Sample ReadDefinition(FrequencyFrame def)
         {
 
             Sample sample = new Sample();
@@ -355,7 +291,7 @@ namespace Nebukam.FrequencyAnalysis
 
             float _average = _sum / ((def.frequency.y == 0 ? 1 : def.frequency.y));
 
-            if(def.tolerance == Tolerance.Strict && _reached != _width)
+            if (def.tolerance == Tolerance.Strict && _reached != _width)
             {
                 sample.average = 0f;
                 sample.peak = 0f;
@@ -375,6 +311,48 @@ namespace Nebukam.FrequencyAnalysis
             return sample;
 
         }
+
+        #region FFT & Sampling
+
+        protected void GetForwardSpectrumData(AudioClip clip, float[] buffer, float seek)
+        {
+
+            int sampleRate = clip.frequency;
+            int numChannels = clip.channels;
+            int multiChannelSampleSize = (int)m_fwdBufferSize * numChannels;
+            int offset = (int)((float)sampleRate * seek);
+
+            if(m_multiChannelSamples.Length != multiChannelSampleSize) //Re-adjust buffer
+                m_multiChannelSamples = new float[multiChannelSampleSize];
+
+            clip.GetData(m_multiChannelSamples, offset);
+
+            int numProcessed = 0;
+            float combinedChannelAverage = 0f;
+            for (int i = 0; i < m_multiChannelSamples.Length; i++)
+            {
+                combinedChannelAverage += m_multiChannelSamples[i];
+
+                // Each time we have processed all channels samples for a point in time, we will store the average of the channels combined
+                if ((i + 1) % numChannels == 0)
+                {
+                    m_fwdSpectrumChunks[numProcessed] = (combinedChannelAverage / numChannels) * m_fwdWindowCoefs[numProcessed];
+                    numProcessed++;
+                    combinedChannelAverage = 0f;
+
+                }
+            }
+
+            ComplexFloat[] fftSpectrum = m_FFT.Execute(m_fwdSpectrumChunks);
+
+            for (int i = 0, n = buffer.Length; i < n; i++)
+            {
+                buffer[i] = (float)(fftSpectrum[i].Magnitude * m_scaleFactor);
+            }
+
+        }
+
+        #endregion
 
         public float map(float s, float a1, float a2, float b1, float b2)
         {

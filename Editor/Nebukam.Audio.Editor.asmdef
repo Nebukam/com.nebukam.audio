@@ -1,0 +1,15 @@
+{
+    "name": "Nebukam.Audio.Editor",
+    "references": [
+        "Unity.Mathematics",
+        "Nebukam.Audio"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}

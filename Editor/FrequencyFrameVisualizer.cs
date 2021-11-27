@@ -4,16 +4,17 @@ using UnityEngine;
 using UnityEditor;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
+using Nebukam.Audio.FrequencyAnalysis;
 
-namespace Nebukam.FrequencyAnalysis
+namespace Nebukam.Audio.Editor
 {
 
-    public class SamplingDefinitionVisualizer : MonoBehaviour
+    public class FrequencyFrameVisualizer : MonoBehaviour
     {
 
         [Header("Data")]
-        [Tooltip("Presets to visualize")]
-        public SamplingDefinitionList Presets;
+        [Tooltip("FrequencyFrameList to visualize")]
+        public FrequencyFrameList FrameList;
 
         [Header("Debug")]
         [Tooltip("Whether to draw debug or not")]
@@ -26,13 +27,15 @@ namespace Nebukam.FrequencyAnalysis
         public Color highlightColor = Color.yellow;
 
         public AudioSource source = null;
-        private FrequencyBandAnalyser analyzer;
+        private FrequencyAnalyser analyzer;
 
         [Header("Analyzer settings")]
+        public int bins = 512;
         public bool smooth = true;
         public float SmoothDownRate = 100f;
         public float scale = 1f;
-        private SamplingData samplingData;
+        private FrameDataDictionary frameDataDict;
+        public float SeekForward = 0f;
 
         private GUIStyle centeredText;
         private bool[] isSampled = new bool[64];
@@ -41,22 +44,23 @@ namespace Nebukam.FrequencyAnalysis
         // Start is called before the first frame update
         void Start()
         {
-            samplingData = new SamplingData();
-            samplingData.Add(Presets);
+            frameDataDict = new FrameDataDictionary();
+            frameDataDict.Add(FrameList);
 
-            analyzer = new FrequencyBandAnalyser();
+            analyzer = new FrequencyAnalyser();
         }
 
         // Update is called once per frame
         void Update()
         {
+
             analyzer.doSmooth = smooth;
             analyzer.smoothDownRate = SmoothDownRate;
             analyzer.scale = scale;
 
             analyzer.audioSource = source;
-            analyzer.Update();
-            analyzer.UpdateSamplingData(samplingData);
+            analyzer.Analyze(SeekForward);
+            analyzer.UpdateFrameData(frameDataDict);
 
         }
 
@@ -116,10 +120,10 @@ namespace Nebukam.FrequencyAnalysis
         private void DrawFrames()
         {
 
-            if (Presets == null) { return; }
+            if (FrameList == null) { return; }
 
             int targetIndex = index;
-            List<SamplingDefinition> defList = Presets.Definitions;
+            List<FrequencyFrame> defList = FrameList.Frames;
 
             if (targetIndex < 0 || targetIndex > defList.Count + 1) { targetIndex = -1; }
 
@@ -133,8 +137,8 @@ namespace Nebukam.FrequencyAnalysis
 
                 if (targetIndex != -1 && i != targetIndex) { continue; }
 
-                SamplingDefinition def = defList[i];
-                float ampMax = def.bands == Bands.Eight ? SamplingDefinition.maxAmplitude8 : SamplingDefinition.maxAmplitude64;
+                FrequencyFrame def = defList[i];
+                float ampMax = def.bands == Bands.Eight ? FrequencyFrame.maxAmplitude8 : FrequencyFrame.maxAmplitude64;
                 float ampStart = def.amplitude.x, ampSize = def.amplitude.y;
                 int freqStart = def.frequency.x, freqSize = def.frequency.y;
 
@@ -154,10 +158,10 @@ namespace Nebukam.FrequencyAnalysis
 
                 Color c = def.color;
                 
-                if(samplingData != null)
+                if(frameDataDict != null)
                 {
                     float3 center = bl;
-                    float sval = samplingData.Get(def.ID);
+                    float sval = frameDataDict.Get(def.ID);
                     center.x += (freqSize * inc) * 0.5f;
                     center.y += (ampSize / ampMax * rect.y) * 0.5f;
                     

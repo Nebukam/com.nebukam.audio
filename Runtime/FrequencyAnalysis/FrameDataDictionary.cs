@@ -7,18 +7,18 @@ using UnityEngine;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
 
-namespace Nebukam.FrequencyAnalysis
+namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public class SamplingData
+    public class FrameDataDictionary
     {
 
-        protected List<SamplingDefinitionList> m_lists = new List<SamplingDefinitionList>();
+        protected List<FrequencyFrameList> m_lists = new List<FrequencyFrameList>();
         protected Dictionary<String, Sample> m_dataDic = new Dictionary<string, Sample>();
 
-        public List<SamplingDefinitionList> lists { get { return m_lists; } }
+        public List<FrequencyFrameList> lists { get { return m_lists; } }
 
-        public SamplingData()
+        public FrameDataDictionary()
         {
 
         }
@@ -28,14 +28,14 @@ namespace Nebukam.FrequencyAnalysis
         /// to be updated by a FrequencyBandAnalyser
         /// </summary>
         /// <param name="list"></param>
-        public void Add(SamplingDefinitionList list)
+        public void Add(FrequencyFrameList list)
         {
             if(m_lists.IndexOf(list) != -1) { return; }
 
             m_lists.Add(list);
-            for (int i = 0, n = list.Definitions.Count; i < n; i++)
+            for (int i = 0, n = list.Frames.Count; i < n; i++)
             {
-                SamplingDefinition def = list.Definitions[i];
+                FrequencyFrame def = list.Frames[i];
                 m_dataDic[def.ID] = new Sample();
             }
 
@@ -98,6 +98,10 @@ namespace Nebukam.FrequencyAnalysis
         /// <param name="value"></param>
         public void Set(string ID, Sample value)
         {
+            Sample previousSample;
+            if (!m_dataDic.TryGetValue(ID, out previousSample) || !previousSample.ON)
+                value.justTriggered = true;
+
             m_dataDic[ID] = value;
         }
 
@@ -106,10 +110,10 @@ namespace Nebukam.FrequencyAnalysis
             string str = "---\n";
             for(int j = 0; j < m_lists.Count; j++)
             {
-                SamplingDefinitionList list = m_lists[j];
-                for (int i = 0, n = list.Definitions.Count; i < n; i++)
+                FrequencyFrameList list = m_lists[j];
+                for (int i = 0, n = list.Frames.Count; i < n; i++)
                 {
-                    SamplingDefinition def = list.Definitions[i];
+                    FrequencyFrame def = list.Frames[i];
                     str += "" + def.ID + " = " + m_dataDic[def.ID] + "\n";
                 }
             }
