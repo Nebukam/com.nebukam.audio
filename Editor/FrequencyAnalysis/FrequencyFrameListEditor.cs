@@ -5,7 +5,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
-using static Nebukam.Editor.EditorExtensions;
+using static Nebukam.Editor.EditorDrawer;
 
 namespace Nebukam.Audio.Editor
 {
@@ -16,38 +16,45 @@ namespace Nebukam.Audio.Editor
 
         internal static Dictionary<Object, bool> _expanded = new Dictionary<Object, bool>();
 
-        internal ReorderableList listHandler;
-        internal SerializedProperty frameList;
-        internal FrequencyFrameList frames;
+        internal ReorderableList listDrawer;
+        internal SerializedProperty fflistSerialized;
+        internal FrequencyFrameList fflist;
 
         internal Rect lastRectSize = new Rect(0,0,0,0);
         internal int activeIndex = 0;
 
+        public void Update()
+        {
+            Repaint();
+        }
+
         private void OnEnable()
         {
-            frameList = serializedObject.FindProperty("Frames");
-            listHandler = new ReorderableList(serializedObject, frameList, true, true, true, true);
-            listHandler.drawElementCallback = DrawListItems;
-            listHandler.drawHeaderCallback = DrawHeader;
-            listHandler.onRemoveCallback = OnListItemRemoved;
-            listHandler.onAddCallback = OnListItemAdded;
+
+            fflistSerialized = serializedObject.FindProperty("Frames");
+            listDrawer = new ReorderableList(serializedObject, fflistSerialized, true, true, true, true);
+            listDrawer.drawElementCallback = DrawListItems;
+            listDrawer.drawHeaderCallback = DrawHeader;
+            listDrawer.onRemoveCallback = OnListItemRemoved;
+            listDrawer.onAddCallback = OnListItemAdded;
+
+            activeIndex = -1;
 
         }
 
         public override void OnInspectorGUI()
         {
 
-            frames = target as FrequencyFrameList;
-
-            ToggleLayoutMode(true);
-
-            listHandler.elementHeight = 160f;
-
+            fflist = target as FrequencyFrameList;
             serializedObject.Update();
 
-            activeIndex = -1;
+            ToggleLayoutMode(true);
+            SetR(new Rect(20f, 20f, Screen.width - 40f, 20f));
 
-            listHandler.DoLayoutList();
+            if (Button("Open in Frequency Analyzer")) { FrequencyAnalyserWindow.ShowWindow(fflist); }
+
+            listDrawer.elementHeight = 260f;
+            listDrawer.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();
 
@@ -61,7 +68,7 @@ namespace Nebukam.Audio.Editor
             if (isActive)
                 activeIndex = index;
 
-            FrequencyFrame frame = frames.Frames[index];
+            FrequencyFrame frame = fflist.Frames[index];
                         
 
             Rect r = new Rect(rect.x, rect.y, rect.width - 10f, EditorGUIUtility.singleLineHeight);
@@ -73,7 +80,7 @@ namespace Nebukam.Audio.Editor
             Space(8f);
 
             int changes = ObjectField(ref frame, "");
-            frames.Frames[index] = frame;
+            fflist.Frames[index] = frame;
 
             if (frame == null) { return; }
 
@@ -89,7 +96,7 @@ namespace Nebukam.Audio.Editor
         void OnListItemAdded(ReorderableList list)
         {
             //if (activeIndex == -1) { return; }
-            frames.Frames.Add(null);
+            fflist.Frames.Add(null);
             EditorUtility.SetDirty(target);
         }
 
@@ -97,7 +104,7 @@ namespace Nebukam.Audio.Editor
         {
             if(activeIndex == -1) { return; }
 
-            frames.Frames.RemoveAt(activeIndex);
+            fflist.Frames.RemoveAt(activeIndex);
             EditorUtility.SetDirty(target);
         }
 

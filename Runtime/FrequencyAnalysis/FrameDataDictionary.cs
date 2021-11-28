@@ -105,6 +105,15 @@ namespace Nebukam.Audio.FrequencyAnalysis
             m_dataDic[ID] = value;
         }
 
+        /// <summary>
+        /// Clears the lists & data
+        /// </summary>
+        public void Clear()
+        {
+            m_lists.Clear();
+            m_dataDic.Clear();
+        }
+
         public override string ToString()
         {
             string str = "---\n";

@@ -28,6 +28,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected float[] m_freqBands8;
         protected float[] m_freqBands64;
+        protected float[] m_freqBands128;
 
         protected AudioSource m_audioSource;
 
@@ -46,8 +47,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         }
 
         public float[] freqBands8 { get { return m_freqBands8; } }
-
         public float[] freqBands64 { get { return m_freqBands64; } }
+        public float[] freqBands128 { get { return m_freqBands128; } }
 
         public FFT m_FFT = new FFT();
 
@@ -88,6 +89,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             m_freqBands8 = new float[8];
             m_freqBands64 = new float[64];
+            m_freqBands128 = new float[128];
 
             m_samples = new float[m_frequencyBins];
             m_sampleBuffer = new float[m_frequencyBins];
@@ -197,7 +199,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 if (forward == 0f)
                     m_audioSource.GetSpectrumData(m_sampleBuffer, 0, m_windowType);
                 else
-                    GetForwardSpectrumData(m_audioSource.clip, m_sampleBuffer, forward + audioSource.time);
+                    GetSpectrumData(m_audioSource.clip, m_sampleBuffer, audioSource.time + forward);
 
                 if (m_doSmooth)
                 {
@@ -232,6 +234,41 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <param name="time"></param>
         public void AnalyzeAt(AudioClip clip, float time)
         {
+            //---   POPULATE SAMPLES
+
+
+            GetSpectrumData(clip, m_sampleBuffer, time);
+
+
+            for (int i = 0; i < m_samples.Length; i++)
+            {
+                m_samples[i] = m_sampleBuffer[i];
+            }
+
+            /*
+            if (m_doSmooth)
+            {
+                float time = Time.deltaTime;
+
+                for (int i = 0; i < m_samples.Length; i++)
+                {
+                    if (m_sampleBuffer[i] > m_samples[i])
+                        m_samples[i] = m_sampleBuffer[i];
+                    else
+                        m_samples[i] = lerp(m_samples[i], m_sampleBuffer[i], time * m_smoothDownRate);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < m_samples.Length; i++)
+                {
+                    m_samples[i] = m_sampleBuffer[i];
+                }
+            }
+            */
+
+            UpdateFreqBands8();
+            UpdateFreqBands64();
 
         }
 
@@ -314,7 +351,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region FFT & Sampling
 
-        protected void GetForwardSpectrumData(AudioClip clip, float[] buffer, float seek)
+        protected void GetSpectrumData(AudioClip clip, float[] buffer, float seek)
         {
 
             int sampleRate = clip.frequency;
@@ -322,7 +359,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             int multiChannelSampleSize = (int)m_fwdBufferSize * numChannels;
             int offset = (int)((float)sampleRate * seek);
 
-            if(m_multiChannelSamples.Length != multiChannelSampleSize) //Re-adjust buffer
+            if (m_multiChannelSamples.Length != multiChannelSampleSize) //Re-adjust buffer
                 m_multiChannelSamples = new float[multiChannelSampleSize];
 
             clip.GetData(m_multiChannelSamples, offset);
