@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEditor;
-using static Nebukam.Audio.Editor.EditorExtensions;
+using Nebukam.Editor;
+using static Nebukam.Editor.EditorExtensions;
 
 namespace Nebukam.Audio.Editor
 {
@@ -15,53 +16,51 @@ namespace Nebukam.Audio.Editor
     {
 
         internal static Dictionary<Object, bool> _expanded = new Dictionary<Object, bool>();
-
-        private void OnEnable()
-        {
-
-        }
-
+        
         public override void OnInspectorGUI()
         {
+            ToggleLayoutMode(true);
+            SetR(new Rect(20f,20f,Screen.width - 60f, 500f));
             PrintFrequencyFrameEditor(target as FrequencyFrame);
         }
 
-        internal static void PrintFrequencyFrameEditor(FrequencyFrame frame) { 
+        internal static int PrintFrequencyFrameEditor(FrequencyFrame frame, bool drawSamplingOptions = true)
+        {
 
             int changes = 0;
 
-            EditorGUILayout.BeginHorizontal();
+            MiniLabel("Identifier");
 
-            changes += TextInput(ref frame.ID, "Identifier");
-            changes += ColorSquare(ref frame.color);
+            changes += TextInput(ref frame.ID, "", W - 30f);
+            changes += InlineColorField(ref frame.color, 1f);
 
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.Space(4f);
-            Line();
-
-            bool ex1 = false;
-            _expanded.TryGetValue(frame, out ex1);
-            _expanded[frame] = EditorGUILayout.Foldout(ex1, "Sampling", true);
-            
-
-            if (ex1)
+            if (drawSamplingOptions)
             {
+                Space(4f);
+                Line();
 
-                Bands bandsBefore = frame.bands;
-                changes += EnumPopup(ref frame.bands, "Bands");
-                changes += EnumPopup(ref frame.range, "Range");
-                changes += EnumPopup(ref frame.tolerance, "Tolerance");
-                changes += FloatField(ref frame.scale, "Scale");
+                bool ex1 = false;
+                _expanded.TryGetValue(frame, out ex1);
+                _expanded[frame] = Foldout(ex1, "Sampling");
 
-                if (bandsBefore != frame.bands)
-                    frame.frequency = RemapFrequencies(frame.frequency, bandsBefore, frame.bands);
+                if (ex1)
+                {
 
-                
+                    Bands bandsBefore = frame.bands;
+                    changes += EnumPopup(ref frame.bands, "Bands");
+                    changes += EnumPopup(ref frame.range, "Range");
+                    changes += EnumPopup(ref frame.tolerance, "Tolerance");
+                    changes += FloatField(ref frame.scale, "Scale");
+
+                    if (bandsBefore != frame.bands)
+                        frame.frequency = RemapFrequencies(frame.frequency, bandsBefore, frame.bands);
+
+                }
+
+                Space(4f);
+
+                Line();
             }
-
-            EditorGUILayout.Space(4f);
-
-            Line();
 
             int nMax = 0;
 
@@ -72,11 +71,13 @@ namespace Nebukam.Audio.Editor
             else if (frame.bands == Bands.HundredTwentyEight)
                 nMax = 128;
 
-            changes += StartSizeSlider(ref frame.frequency, new int2(0, nMax), "Frequencies [0 - " + nMax + "]");
-            EditorGUILayout.Space(4f);
+            changes += StartSizeSlider(ref frame.frequency, new int2(0, nMax), 1, "Frequencies [0 - " + nMax + "]");
+            Space(4f);
             changes += StartSizeSlider(ref frame.amplitude, new float2(0f, 3f), "Amplitudes");
 
             if (changes != 0) { EditorUtility.SetDirty(frame); }
+
+            return changes;
 
         }
 
@@ -115,4 +116,5 @@ namespace Nebukam.Audio.Editor
         }
 
     }
+
 }

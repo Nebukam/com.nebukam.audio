@@ -21,7 +21,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
         private void OnValidate()
         {
             for (int i = 0, n = Frames.Count; i < n; i++)
-                Frames[i].Validate();
+            {
+                if(Frames[i] != null)
+                    Frames[i].Validate();
+            }
         }
 
     }

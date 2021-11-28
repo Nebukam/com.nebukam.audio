@@ -1,6 +1,7 @@
 {
     "name": "Nebukam.Audio.Editor",
     "references": [
+        "Nebukam.Editor",
         "Unity.Mathematics",
         "Nebukam.Audio"
     ],

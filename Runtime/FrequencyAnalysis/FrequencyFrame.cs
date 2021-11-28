@@ -1,6 +1,8 @@
 ﻿using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using UnityEngine;
+using UnityEditor;
+using System;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -98,6 +100,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         [Tooltip("Debug Color")]
         public Color color = Color.red;
 
+#if UNITY_EDITOR
+
         /// <summary>
         /// Ensure frequency is within supported limits
         /// </summary>
@@ -110,7 +114,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
             amplitude = new float2(
                 clamp(amplitude.x, 0f, 10f),
                 clamp(amplitude.y, 0f, 10f));
+
         }
+
+#endif
 
         /// <summary>
         /// Copy data to this class from a struct

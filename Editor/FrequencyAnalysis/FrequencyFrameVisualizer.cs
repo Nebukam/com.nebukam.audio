@@ -138,6 +138,9 @@ namespace Nebukam.Audio.Editor
                 if (targetIndex != -1 && i != targetIndex) { continue; }
 
                 FrequencyFrame def = defList[i];
+
+                if(def == null) { continue; }
+
                 float ampMax = def.bands == Bands.Eight ? FrequencyFrame.maxAmplitude8 : FrequencyFrame.maxAmplitude64;
                 float ampStart = def.amplitude.x, ampSize = def.amplitude.y;
                 int freqStart = def.frequency.x, freqSize = def.frequency.y;

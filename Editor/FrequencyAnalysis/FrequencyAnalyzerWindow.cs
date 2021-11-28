@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
-using static Nebukam.Audio.Editor.EditorExtensions;
+using static Nebukam.Editor.EditorExtensions;
 
 namespace Nebukam.Audio.Editor { 
 
