@@ -96,8 +96,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
         [Tooltip("Vertical start & height of the frame (limited by frequency)")]
         public float2 amplitude = new float2(0f,1f);
 
-        [Tooltip("Raw output scale")]
-        public float scale = 1f;
+        [Tooltip("Data input scale")]
+        public float inputScale = 1f;
+
+        [Tooltip("Data output scale")]
+        public float outputScale = 1f;
 
         [Tooltip("Debug Color")]
         public Color color = Color.red;
@@ -134,7 +137,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             tolerance = data.tolerance;
             frequency = data.frequency;
             amplitude = data.amplitude;
-            scale = data.scale;
+            outputScale = data.scale;
         }
         
         public static implicit operator FrequencyFrameData(FrequencyFrame value) {
@@ -145,7 +148,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 tolerance = value.tolerance,
                 frequency = value.frequency,
                 amplitude = value.amplitude,
-                scale = value.scale
+                scale = value.outputScale
             }; 
         }
 

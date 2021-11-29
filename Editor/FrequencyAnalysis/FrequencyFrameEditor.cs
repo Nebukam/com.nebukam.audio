@@ -11,99 +11,123 @@ using static Nebukam.Editor.EditorDrawer;
 namespace Nebukam.Audio.Editor
 {
 
+    [System.Flags]
+    public enum FrameEditorVisibility
+    {
+        None = 0,
+        Preview = 1,
+        Identifier = 2,
+        Tolerance = 4,
+        BandsAndOutputType = 8,
+        Scaling = 16,
+        FrequencyAndAmplitude = 32,
+        Everything = ~0
+    }
+
     [CustomEditor(typeof(FrequencyFrame))]
     [CanEditMultipleObjects]
     public class FrequencyFrameEditor : UnityEditor.Editor
     {
 
-        internal static Dictionary<Object, bool> _expanded = new Dictionary<Object, bool>();
+        public override bool RequiresConstantRepaint() { return true; }
 
         public override void OnInspectorGUI()
         {
 
-            ToggleLayoutMode(true);
-            SetR(new Rect(20f, 20f, Screen.width - 40f, 220f));
+            __RequireRectUpdate(true);
+            SetRect(new Rect(20f, 20f, Screen.width - 40f, 220f));
 
             if (Button("Open Frequency Analyzer")) { FrequencyAnalyserWindow.ShowWindow(); }
             Space(4f);
 
-            PrintFrequencyFrameEditor(target as FrequencyFrame);
+            float lH;
 
+            PrintFrequencyFrameEditor(target as FrequencyFrame, out lH);
 
         }
 
-        public override bool RequiresConstantRepaint() { return true; }
-
-        internal static int PrintFrequencyFrameEditor(FrequencyFrame frame, bool drawSamplingOptions = true)
+        internal static int PrintFrequencyFrameEditor(FrequencyFrame frame, out float localHeight, FrameEditorVisibility showOptions = FrameEditorVisibility.Everything)
         {
 
+            float _YBefore = Y;
             int changes = 0;
-            
-            if (BeginGL(100f))
+
+            if (showOptions.HasFlag(FrameEditorVisibility.Preview))
             {
-                Color c = Color.black;
-                c.a = 0.1f;
-                GLFill(c);
+                if (BeginGL(100f))
+                {
+                    Color c = Color.black;
+                    c.a = 0.1f;
+                    GLFill(c);
 
-                FrequencyAnalysis.DrawLines(GLArea, frame.bands);
-                FrequencyAnalysis.DrawSpectrum(GLArea, FrequencyAnalysis.freqAnalyser.GetBands(frame.bands), SpectrumDrawMode.BANDS);
-                FrequencyAnalysis.DrawFrame(GLArea, frame);
+                    FrequencyAnalysis.DrawLines(GLArea, frame.bands);
+                    FrequencyAnalysis.DrawSpectrum(GLArea, FrequencyAnalysis.freqAnalyser.GetBands(frame.bands), SpectrumDrawMode.BANDS);
+                    FrequencyAnalysis.DrawFrame(GLArea, frame);
 
-                EndGL();
+                    EndGL();
+                }
             }
 
-            MiniLabel("Identifier");
-            BeginInLine(W-30f); 
-            changes += TextInput(ref frame.ID, "");
-            NextInline(30f);
-            changes += ColorFieldInlined(ref frame.color);
-            EndInLine();
-
-            BeginColumns(2);
-            Bands bandsBefore = frame.bands;
-            if (EnumInlined(ref frame.bands, true, "Bands") == 1)
+            if (showOptions.HasFlag(FrameEditorVisibility.Identifier))
             {
-                changes++;
-                frame.frequency = RemapFrequencies(frame.frequency, bandsBefore, frame.bands);
+                MiniLabel("Identifier");
+                __BeginInLine(W - 30f);
+                changes += TextInput(ref frame.ID, "");
+                __NextInline(30f);
+                changes += ColorFieldInlined(ref frame.color);
+                __EndInLine();
             }
 
-            NextColumn();
-            changes += EnumPopupInlined(ref frame.output, "Default output");
-
-            EndColumns();
-            
-            if (drawSamplingOptions)
+            if (showOptions.HasFlag(FrameEditorVisibility.Tolerance))
             {
                 Space(4f);
-                Line();
+                changes += EnumPopup(ref frame.tolerance, "Tolerance");
+            }
 
-                bool ex1 = false;
-                _expanded.TryGetValue(frame, out ex1);
-                _expanded[frame] = Foldout(ex1, "Sampling");
-
-                if (ex1)
+            if (showOptions.HasFlag(FrameEditorVisibility.BandsAndOutputType))
+            {
+                __BeginCol(2);
+                Bands bandsBefore = frame.bands;
+                if (EnumInlined(ref frame.bands, true, "Bands") == 1)
                 {
-                 //   changes += EnumPopup(ref frame.bands, "Bands");
-                    changes += EnumPopup(ref frame.output, "Range");
-                    changes += EnumPopup(ref frame.tolerance, "Tolerance");
-                    changes += FloatField(ref frame.scale, "Scale");
-
+                    changes++;
+                    frame.frequency = RemapFrequencies(frame.frequency, bandsBefore, frame.bands);
                 }
 
-                Space(4f);
+                __NextCol();
+                changes += EnumPopupInlined(ref frame.output, "Default output");
 
-                Line();
+                __EndCol();
+                Space(4f);
             }
 
-            int nMax = (int)frame.bands;
+            if (showOptions.HasFlag(FrameEditorVisibility.Scaling))
+            {
+                __BeginCol(2);
+                changes += FloatField(ref frame.inputScale, "Input Scale");
+                __NextCol();
+                changes += FloatField(ref frame.outputScale, "Output Scale");
+                __EndCol();     
+                
+                Space(4f);
+            }
 
-            changes += StartSizeSlider(ref frame.frequency, new int2(0, nMax), 1, "Frequencies [0 - " + nMax + "]");
-            if(frame.frequency.y < 1) { frame.frequency.y = 1; }
+            if (showOptions.HasFlag(FrameEditorVisibility.FrequencyAndAmplitude))
+            {
+                int nMax = (int)frame.bands;
 
-            Space(4f);
-            changes += StartSizeSlider(ref frame.amplitude, new float2(0f, 1f), "Amplitudes");
+                changes += StartSizeSlider(ref frame.frequency, new int2(0, nMax), 1, "Frequencies [0 - " + nMax + "]");
+                if (frame.frequency.y < 1) { frame.frequency.y = 1; }
+
+                Space(4f);
+
+                changes += StartSizeSlider(ref frame.amplitude, new float2(0f, 1f), "Amplitudes");
+
+            }
 
             if (changes != 0) { EditorUtility.SetDirty(frame); }
+
+            localHeight = Y - _YBefore;
 
             return changes;
 

@@ -350,7 +350,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
             else
             {
-                float scale = frame.scale;
+                float scale = frame.outputScale;
 
                 sample.average = _average * scale;
                 sample.peak = peak * scale;

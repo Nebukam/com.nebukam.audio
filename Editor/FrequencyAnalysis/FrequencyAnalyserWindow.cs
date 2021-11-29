@@ -45,23 +45,22 @@ namespace Nebukam.Audio.Editor {
 
             FrequencyAnalysis.SetCurrentFrameList(m_frequencyFrameList);
 
-            ToggleLayoutMode(false);
+            __RequireRectUpdate(true);
+            SetRect(new Rect(10f, 10f, Screen.width - 20f, 20f));
 
-            SetR(new Rect(10f, 10f, Screen.width - 20f, 20f));
-
-            BeginColumns(2);
+            __BeginCol(2);
             MiniLabel("Audio Clip");
             if (ObjectField(ref m_audioClip) == 1)
                 Prefs.Update("FAW_AudioClip", ref m_audioClip);
 
-            NextColumn();
+            __NextCol();
             MiniLabel("Frame list");
             if (ObjectField(ref m_frequencyFrameList) == 1) { }
                 Prefs.Update("FAW_FrameList", ref m_frequencyFrameList);
 
             FrequencyAnalysis.SetCurrentFrameList(m_frequencyFrameList);
 
-            EndColumns();
+            __EndCol();
 
             Space(8f);
             Line();
@@ -117,7 +116,7 @@ namespace Nebukam.Audio.Editor {
                 EndGL();
             }
 
-            EditorGUI.LabelField(CR(10f, -50f), "test");
+            EditorGUI.LabelField(GetCurrentRect(10f, -50f), "test");
 
         }
 
