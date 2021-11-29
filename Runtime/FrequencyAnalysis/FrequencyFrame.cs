@@ -7,7 +7,7 @@ using System;
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public enum RangeType
+    public enum OutputType
     {
         Trigger, // 0f-1f
         Peak, // 0.0f...1.0f
@@ -17,9 +17,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     public enum Bands
     {
-        Eight = 0, // 8
-        SixtyFour = 1, // 64
-        HundredTwentyEight = 2 // 128
+        Eight = 8,
+        Sixteen = 16,
+        ThirtyTwo = 32,
+        SixtyFour = 64,
+        HundredTwentyEight = 128
     }
 
     public enum Tolerance
@@ -38,16 +40,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public bool justTriggered;
 
-        public RangeType range;
+        public OutputType output;
 
         public bool ON { get { return trigger > 0f; } }
 
         public static implicit operator float(Sample s)
         {
-            if (s.range == RangeType.Trigger) { return s.trigger; }
-            if (s.range == RangeType.Peak) { return s.peak; }
-            if (s.range == RangeType.Average) { return s.average; }
-            if (s.range == RangeType.Sum) { return s.sum; }
+            if (s.output == OutputType.Trigger) { return s.trigger; }
+            if (s.output == OutputType.Peak) { return s.peak; }
+            if (s.output == OutputType.Average) { return s.average; }
+            if (s.output == OutputType.Sum) { return s.sum; }
 
             return s.average;
         }
@@ -59,7 +61,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public string ID;
         public Bands bands;
-        public RangeType range;
+        public OutputType range;
         public Tolerance tolerance;
         public int2 frequency;
         public float2 amplitude;
@@ -83,7 +85,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public Bands bands = Bands.SixtyFour;
 
         [Tooltip("How to process the data within the frame")]
-        public RangeType range = RangeType.Average;
+        public OutputType output = OutputType.Average;
 
         [Tooltip("How tolerant is the sampling result. Strict = all frequency must be > 0")]
         public Tolerance tolerance = Tolerance.Loose;
@@ -128,7 +130,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             if (copyID) { ID = data.ID; }
             bands = data.bands;
-            range = data.range;
+            output = data.range;
             tolerance = data.tolerance;
             frequency = data.frequency;
             amplitude = data.amplitude;
@@ -139,7 +141,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             return new FrequencyFrameData() {
                 ID = value.ID,
                 bands = value.bands,
-                range = value.range,
+                range = value.output,
                 tolerance = value.tolerance,
                 frequency = value.frequency,
                 amplitude = value.amplitude,

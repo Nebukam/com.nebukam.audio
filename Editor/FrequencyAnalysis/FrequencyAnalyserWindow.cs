@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using Nebukam.Editor;
 using static Nebukam.Editor.EditorDrawer;
 using static Nebukam.Editor.EditorGLDrawer;
 using Nebukam.Audio.FrequencyAnalysis;
@@ -19,10 +20,12 @@ namespace Nebukam.Audio.Editor {
         private static FrequencyFrameList m_frequencyFrameList = null;
         private static AudioClip m_audioClip = null;
         private static float m_currentTime = 0f;
+        private static float m_currentScale = 1f;
 
         [MenuItem("N:Toolkit/:Audio/Frequency Analyzer")]
         public static void ShowWindow()
         {
+            m_audioClip = Prefs.Get<AudioClip>("FAW_AudioClip", null);
             EditorWindow.GetWindow(typeof(FrequencyAnalyserWindow), false, m_title, true);
         }
 
@@ -40,19 +43,38 @@ namespace Nebukam.Audio.Editor {
         void OnGUI()
         {
 
-            FAShared.SetCurrentFrameList(m_frequencyFrameList);
+            FrequencyAnalysis.SetCurrentFrameList(m_frequencyFrameList);
 
             ToggleLayoutMode(false);
+
             SetR(new Rect(10f, 10f, Screen.width - 20f, 20f));
 
-            MiniLabel("Frame list");
-            ObjectField(ref m_frequencyFrameList);
-            FAShared.SetCurrentFrameList(m_frequencyFrameList);
-
+            BeginColumns(2);
             MiniLabel("Audio Clip");
-            ObjectField(ref m_audioClip);
+            if (ObjectField(ref m_audioClip) == 1)
+                Prefs.Update("FAW_AudioClip", ref m_audioClip);
 
-            if(m_audioClip == null)
+            NextColumn();
+            MiniLabel("Frame list");
+            if (ObjectField(ref m_frequencyFrameList) == 1) { }
+                Prefs.Update("FAW_FrameList", ref m_frequencyFrameList);
+
+            FrequencyAnalysis.SetCurrentFrameList(m_frequencyFrameList);
+
+            EndColumns();
+
+            Space(8f);
+            Line();
+            Space(8f);
+
+            FloatField(ref m_currentScale, "Frequency Band Scaling");
+            FrequencyAnalysis.freqAnalyser.scale = m_currentScale;
+
+            Space(8f);
+            Line();
+            Space(8f);
+
+            if (m_audioClip == null)
             {
                 Label("--:-- / --:--");
                 float fake = 0f;
@@ -64,12 +86,11 @@ namespace Nebukam.Audio.Editor {
                 var ttf = TimeSpan.FromSeconds((double)m_currentTime).ToString(@"mm\:ss");
                 Label(ttf+" / "+ ttl);
                 Slider(ref m_currentTime, 0f, m_audioClip.length);
-                FAShared.Analyze(m_audioClip, m_currentTime);
+                FrequencyAnalysis.Analyze(m_audioClip, m_currentTime);
             }
 
-            if (BeginGL(100f))
+            if (BeginGL(200f))
             {
-                //GL.Begin(GL.LINES);
 
                 Color c = Color.black;
                 c.a = 0.25f;
@@ -77,21 +98,26 @@ namespace Nebukam.Audio.Editor {
 
                 if (m_audioClip != null)
                 {
-                    FrequencyFrameEditor.DrawSpectrum(FAShared.freqAnalyser.freqBands64);
+                    FrequencyAnalysis.DrawSpectrum(GLArea, FrequencyAnalysis.freqAnalyser.freqBands64);
                 }
 
                 if (m_frequencyFrameList != null)
                 {
                     FrequencyFrame frame;
-                    for(int i = 0; i < m_frequencyFrameList.Frames.Count; i++)
+                    FrequencyAnalysis.DrawLines(GLArea, Bands.SixtyFour);
+
+                    for (int i = 0; i < m_frequencyFrameList.Frames.Count; i++)
                     {
                         frame = m_frequencyFrameList.Frames[i];
-                        FrequencyFrameEditor.DrawFrame(frame, i == 0);
+                        FrequencyAnalysis.DrawFrame(GLArea, frame);
                     }
+
                 }
 
                 EndGL();
             }
+
+            EditorGUI.LabelField(CR(10f, -50f), "test");
 
         }
 

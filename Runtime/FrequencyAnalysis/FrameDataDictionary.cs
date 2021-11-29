@@ -13,10 +13,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class FrameDataDictionary
     {
 
-        protected List<FrequencyFrameList> m_lists = new List<FrequencyFrameList>();
-        protected Dictionary<String, Sample> m_dataDic = new Dictionary<string, Sample>();
+        protected List<FrequencyFrame> m_frames = new List<FrequencyFrame>();
+        protected Dictionary<FrequencyFrame, Sample> m_dataDic = new Dictionary<FrequencyFrame, Sample>();
 
-        public List<FrequencyFrameList> lists { get { return m_lists; } }
+        public List<FrequencyFrame> frames { get { return m_frames; } }
 
         public FrameDataDictionary()
         {
@@ -24,33 +24,48 @@ namespace Nebukam.Audio.FrequencyAnalysis
         }
 
         /// <summary>
-        /// Registers a list of sampling definition in this SamplingData object
+        /// Registers a list of FrequencyFrame in this dictionary
         /// to be updated by a FrequencyBandAnalyser
         /// </summary>
         /// <param name="list"></param>
         public void Add(FrequencyFrameList list)
         {
-            if(m_lists.IndexOf(list) != -1) { return; }
-
-            m_lists.Add(list);
             for (int i = 0, n = list.Frames.Count; i < n; i++)
-            {
-                FrequencyFrame def = list.Frames[i];
-                m_dataDic[def.ID] = new Sample();
-            }
-
+                Add(list.Frames[i]);
         }
 
         /// <summary>
-        /// Returns the current Sample value associated with a given ID
+        /// Registers a single FrequencyFrame in this dictionary
         /// </summary>
-        /// <param name="ID"></param>
+        /// <param name="frame"></param>
+        public void Add(FrequencyFrame frame)
+        {
+            if (m_frames.IndexOf(frame) != -1) { return; }
+            m_dataDic[frame] = new Sample();
+        }
+
+        /// <summary>
+        /// Removes a single FrequencyFrame from this dictionary
+        /// </summary>
+        /// <param name="frame"></param>
+        public void Remove(FrequencyFrame frame)
+        {
+            int index = m_frames.IndexOf(frame);
+            if (index == -1) { return; }
+            m_frames.RemoveAt(index);
+            m_dataDic.Remove(frame);
+        }
+
+        /// <summary>
+        /// Returns the current Sample value associated with a given FrequencyFrame
+        /// </summary>
+        /// <param name="frame"></param>
         /// <returns></returns>
-        public Sample Get(string ID)
+        public Sample Get(FrequencyFrame frame)
         {
             Sample result;
 
-            if(m_dataDic.TryGetValue(ID, out result))
+            if (m_dataDic.TryGetValue(frame, out result))
             {
                 return result;
             }
@@ -61,16 +76,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
         }
 
         /// <summary>
-        /// Tries to find a Sample associated with a given ID
+        /// Tries to find a Sample associated with a given FrequencyFrame
         /// </summary>
-        /// <param name="ID"></param>
+        /// <param name="frame"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public bool TryGet(string ID, out float result)
+        public bool TryGet(FrequencyFrame frame, out float result)
         {
             Sample s;
 
-            if(m_dataDic.TryGetValue(ID, out s)) 
+            if (m_dataDic.TryGetValue(frame, out s))
             {
                 result = s;
                 return true;
@@ -81,28 +96,28 @@ namespace Nebukam.Audio.FrequencyAnalysis
         }
 
         /// <summary>
-        /// Tries to find a Sample associated with a given ID
+        /// Tries to find a Sample associated with a given FrequencyFrame
         /// </summary>
-        /// <param name="ID"></param>
+        /// <param name="frame"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public bool TryGet(string ID, out Sample result)
+        public bool TryGet(FrequencyFrame frame, out Sample result)
         {
-            return m_dataDic.TryGetValue(ID, out result);
+            return m_dataDic.TryGetValue(frame, out result);
         }
 
         /// <summary>
         /// Sets the value of a Sample
         /// </summary>
-        /// <param name="ID"></param>
+        /// <param name="frame"></param>
         /// <param name="value"></param>
-        public void Set(string ID, Sample value)
+        public void Set(FrequencyFrame frame, Sample value)
         {
             Sample previousSample;
-            if (!m_dataDic.TryGetValue(ID, out previousSample) || !previousSample.ON)
+            if (!m_dataDic.TryGetValue(frame, out previousSample) || !previousSample.ON)
                 value.justTriggered = true;
 
-            m_dataDic[ID] = value;
+            m_dataDic[frame] = value;
         }
 
         /// <summary>
@@ -110,25 +125,22 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         public void Clear()
         {
-            m_lists.Clear();
+            m_frames.Clear();
             m_dataDic.Clear();
         }
 
         public override string ToString()
         {
             string str = "---\n";
-            for(int j = 0; j < m_lists.Count; j++)
+
+            for (int i = 0; i < m_frames.Count; i++)
             {
-                FrequencyFrameList list = m_lists[j];
-                for (int i = 0, n = list.Frames.Count; i < n; i++)
-                {
-                    FrequencyFrame def = list.Frames[i];
-                    str += "" + def.ID + " = " + m_dataDic[def.ID] + "\n";
-                }
+                FrequencyFrame frame = m_frames[i];
+                str += string.Format("[{0}] {1} = {2}\n", frame.name, frame.ID, m_dataDic[frame]);
             }
 
             return str;
-            
+
         }
 
     }

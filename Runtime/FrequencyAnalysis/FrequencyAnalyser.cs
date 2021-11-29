@@ -26,9 +26,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected float[] m_fwdSpectrumChunks;
         protected float m_scaleFactor;
 
-        protected float[] m_freqBands8;
-        protected float[] m_freqBands64;
-        protected float[] m_freqBands128;
+        protected float[] m_freqBands8 = new float[8];
+        protected float[] m_freqBands16 = new float[16];
+        protected float[] m_freqBands32 = new float[32];
+        protected float[] m_freqBands64 = new float[64];
+        protected float[] m_freqBands128 = new float[128];
 
         protected AudioSource m_audioSource;
 
@@ -47,8 +49,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
         }
 
         public float[] freqBands8 { get { return m_freqBands8; } }
+        public float[] freqBands16 { get { return m_freqBands16; } }
+        public float[] freqBands32 { get { return m_freqBands32; } }
         public float[] freqBands64 { get { return m_freqBands64; } }
         public float[] freqBands128 { get { return m_freqBands128; } }
+
+        /// <summary>
+        /// Return the float sample array matching selected bands
+        /// </summary>
+        /// <param name="bands"></param>
+        /// <returns></returns>
+        public float[] GetBands(Bands bands)
+        {
+            if (bands == Bands.Eight) return m_freqBands8;
+            if (bands == Bands.Sixteen) return m_freqBands16;
+            if (bands == Bands.ThirtyTwo) return m_freqBands32;
+            if (bands == Bands.SixtyFour) return m_freqBands64;
+            if (bands == Bands.HundredTwentyEight) return m_freqBands128;
+            return m_freqBands128;
+        }
 
         public FFT m_FFT = new FFT();
 
@@ -86,10 +105,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             m_frequencyBins = bins;
             m_fwdBufferSize = (uint)(m_frequencyBins * 2);
             m_windowType = FFTW;
-
-            m_freqBands8 = new float[8];
-            m_freqBands64 = new float[64];
-            m_freqBands128 = new float[128];
 
             m_samples = new float[m_frequencyBins];
             m_sampleBuffer = new float[m_frequencyBins];
@@ -279,56 +294,54 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <param name="frameDictionary"></param>
         public void UpdateFrameData(FrameDataDictionary frameDictionary)
         {
-            List<FrequencyFrameList> frameList = frameDictionary.lists;
-
-            for (int l = 0, ln = frameList.Count; l < ln; l++)
+            List<FrequencyFrame> frames = frameDictionary.frames;
+            FrequencyFrame frame;
+            for (int i = 0, n = frames.Count; i < n; i++)
             {
-                List<FrequencyFrame> defList = frameList[l].Frames;
-                FrequencyFrame def;
-                for (int i = 0, n = defList.Count; i < n; i++)
-                {
-                    def = defList[i];
-                    frameDictionary.Set(def.ID, ReadDefinition(def));
-                }
+                frame = frames[i];
+                frameDictionary.Set(frame, ReadFrame(frame));
             }
         }
 
         /// <summary>
         /// Compute a single Sample data based on a given SamplingDefinition
         /// </summary>
-        /// <param name="def"></param>
+        /// <param name="frame"></param>
         /// <returns></returns>
-        public Sample ReadDefinition(FrequencyFrame def)
+        public Sample ReadFrame(FrequencyFrame frame)
         {
 
             Sample sample = new Sample();
-            sample.range = def.range;
+            sample.output = frame.output;
 
-            float _peak = 0f;
-            float _floor = def.amplitude.x;
-            float _ceiling = _floor + def.amplitude.y;
-            float _sum = 0f;
+            float ampBegin = frame.amplitude.x;
+            float ampEnd = ampBegin + frame.amplitude.y;
+            float peak = 0f;
+            float sum = 0f;
+            float bandValue, bandValueRemapped;
 
-            int _width = max(1, def.frequency.y);
-            int _sn = clamp(def.frequency.x + _width, 0, 63);
-            int _reached = 0;
+            float[] bands = GetBands(frame.bands);
 
-            for (int s = def.frequency.x; s < _sn; s++)
+            int sampleWidth = math.max(1, frame.frequency.y);
+            int seekLength = clamp(frame.frequency.x + sampleWidth, 0, bands.Length);
+            int reached = 0;
+
+            for (int i = frame.frequency.x; i < seekLength; i++)
             {
-                float sampleValue = m_freqBands64[s];
+                bandValue = bands[i];
 
-                if (sampleValue >= _floor) { _reached++; }
+                if (bandValue >= ampBegin) { reached++; }
 
-                sampleValue = clamp(sampleValue, _floor, _ceiling);
-                float mappedValue = map(sampleValue, _floor, _ceiling, 0f, 1f);
+                bandValue = clamp(bandValue, ampBegin, ampEnd);
+                bandValueRemapped = map(bandValue, ampBegin, ampEnd, 0f, 1f);
+                peak = max(peak, bandValueRemapped);
 
-                if (mappedValue > _peak) { _peak = mappedValue; }
-                _sum += mappedValue;
+                sum += bandValueRemapped;
             }
 
-            float _average = _sum / ((def.frequency.y == 0 ? 1 : def.frequency.y));
+            float _average = sum / sampleWidth;
 
-            if (def.tolerance == Tolerance.Strict && _reached != _width)
+            if (frame.tolerance == Tolerance.Strict && reached != sampleWidth)
             {
                 sample.average = 0f;
                 sample.peak = 0f;
@@ -337,12 +350,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
             else
             {
-                float scale = def.scale;
+                float scale = frame.scale;
 
                 sample.average = _average * scale;
-                sample.peak = _peak * scale;
-                sample.trigger = (_peak > 0f ? 1f : 0f) * scale;
-                sample.sum = _sum * scale;
+                sample.peak = peak * scale;
+                sample.trigger = (peak > 0f ? 1f : 0f) * scale;
+                sample.sum = sum * scale;
             }
 
             return sample;

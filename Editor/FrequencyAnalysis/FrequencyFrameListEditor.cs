@@ -23,10 +23,7 @@ namespace Nebukam.Audio.Editor
         internal Rect lastRectSize = new Rect(0,0,0,0);
         internal int activeIndex = 0;
 
-        public void Update()
-        {
-            Repaint();
-        }
+        public override bool RequiresConstantRepaint() { return true; }
 
         private void OnEnable()
         {
@@ -37,6 +34,7 @@ namespace Nebukam.Audio.Editor
             listDrawer.drawHeaderCallback = DrawHeader;
             listDrawer.onRemoveCallback = OnListItemRemoved;
             listDrawer.onAddCallback = OnListItemAdded;
+            listDrawer.elementHeight = 320f;
 
             activeIndex = -1;
 
@@ -53,7 +51,7 @@ namespace Nebukam.Audio.Editor
 
             if (Button("Open in Frequency Analyzer")) { FrequencyAnalyserWindow.ShowWindow(fflist); }
 
-            listDrawer.elementHeight = 260f;
+            
             listDrawer.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();
@@ -82,14 +80,16 @@ namespace Nebukam.Audio.Editor
             int changes = ObjectField(ref frame, "");
             fflist.Frames[index] = frame;
 
-            if (frame == null) { return; }
+            if(changes > 0) { EditorUtility.SetDirty(target); }
 
-            FrequencyFrameEditor.PrintFrequencyFrameEditor(frame, false);
-
-            //if (ObjectField<FrequencyFrame>(ref frame) > 0)
-              //  frames.Frames[index] = frame;
-
-            //Space(4f);
+            if (frame == null) 
+            {
+                EditorGUI.LabelField(CR(0f,100f), "Undefined FrequencyFrame", EditorStyles.centeredGreyMiniLabel);
+            }
+            else
+            {
+                FrequencyFrameEditor.PrintFrequencyFrameEditor(frame, false);
+            }
 
         }
 

@@ -120,67 +120,6 @@ namespace Nebukam.Audio.Editor
         private void DrawFrames()
         {
 
-            if (FrameList == null) { return; }
-
-            int targetIndex = index;
-            List<FrequencyFrame> defList = FrameList.Frames;
-
-            if (targetIndex < 0 || targetIndex > defList.Count + 1) { targetIndex = -1; }
-
-            float inc = rect.x / 64;
-            float3 origin = transform.position;
-
-            for(int i = 0; i < 64; i++) { isSampled[i] = false; }
-
-            for (int i = 0, n = defList.Count; i < n; i++)
-            {
-
-                if (targetIndex != -1 && i != targetIndex) { continue; }
-
-                FrequencyFrame def = defList[i];
-
-                if(def == null) { continue; }
-
-                float ampMax = def.bands == Bands.Eight ? FrequencyFrame.maxAmplitude8 : FrequencyFrame.maxAmplitude64;
-                float ampStart = def.amplitude.x, ampSize = def.amplitude.y;
-                int freqStart = def.frequency.x, freqSize = def.frequency.y;
-
-                for(int j = def.frequency.x; j < clamp(def.frequency.x + max(1, def.frequency.y),0,64); j++) { isSampled[j] = true; }
-
-                float3 bl = origin;
-                bl.x += (freqStart * inc);
-                bl.y += (ampStart / ampMax * rect.y);
-                float3 tl = bl, tr = bl, br = bl;
-
-                tl.y += ampSize / ampMax * rect.y;
-
-                tr.x += freqSize * inc;
-                tr.y = tl.y;
-
-                br.x = tr.x;
-
-                Color c = def.color;
-                
-                if(frameDataDict != null)
-                {
-                    float3 center = bl;
-                    float sval = frameDataDict.Get(def.ID);
-                    center.x += (freqSize * inc) * 0.5f;
-                    center.y += (ampSize / ampMax * rect.y) * 0.5f;
-                    
-                    if(sval == 0f) { c.a = 0.5f; }
-                    centeredText.normal.textColor = c;
-                    Handles.Label(center, "" + sval, centeredText);
-
-                }
-
-                Debug.DrawLine(bl, tl, c);
-                Debug.DrawLine(tl, tr, c);
-                Debug.DrawLine(tr, br, c);
-                Debug.DrawLine(br, bl, c);
-
-            }
-
         }
 
         private void DrawSpectrum()
