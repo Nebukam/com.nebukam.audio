@@ -59,8 +59,8 @@ namespace Nebukam.Audio.Editor
             analyzer.scale = scale;
 
             analyzer.audioSource = source;
-            analyzer.Analyze(SeekForward);
-            analyzer.UpdateFrameData(frameDataDict);
+            analyzer.Analyse(SeekForward);
+            analyzer.ReadDataDictionary(frameDataDict);
 
         }
 

@@ -26,8 +26,6 @@ namespace Nebukam.Audio.Editor
         internal Rect lastRectSize = new Rect(0,0,0,0);
         internal int activeIndex = 0;
 
-
-
         public override bool RequiresConstantRepaint() { return true; }
 
         private void OnEnable()
@@ -67,7 +65,7 @@ namespace Nebukam.Audio.Editor
 
             __RequireRectUpdate(true);
 
-            SetRect(new Rect(20f, 20f, Screen.width - 40f, 20f));
+            __SetRect(new Rect(20f, 20f, Screen.width - 40f, 20f));
 
             if (Button("Open in Frequency Analyzer")) { FrequencyAnalyserWindow.ShowWindow(fflist); }
             if(EnumFlagsField(ref m_showComponents, "Frame editor masks") == 1) { 
@@ -83,11 +81,15 @@ namespace Nebukam.Audio.Editor
 
         float OnListElementHeight(int index)
         {
-            return m_sizes[index] + EditorGUIUtility.singleLineHeight * 2f;
+            float baseHeight = EditorGUIUtility.singleLineHeight * 2f + 40f;
+            if (index > m_sizes.Length - 1) { return baseHeight; }
+            return m_sizes[index] + baseHeight;
         }
 
         void DrawListItems(Rect rect, int index, bool isActive, bool isFocused)
         {
+
+            if(index > m_sizes.Length - 1) { return; }
 
             __RequireRectUpdate(false);
 
@@ -99,21 +101,20 @@ namespace Nebukam.Audio.Editor
                         
 
             Rect r = new Rect(rect.x, rect.y, rect.width - 10f, EditorGUIUtility.singleLineHeight);
+            __SetRect(r);
 
-            SetRect(r);
-
-            Space(8f);
-            Line();
-            Space(8f);
-
-            int changes = ObjectField(ref frame, "");
-            fflist.Frames[index] = frame;
-
-            if(changes > 0) { EditorUtility.SetDirty(target); }
+            Color col = frame == null ? Color.gray : frame.color * 0.5f;
+            col.a = 1f;
+            Separator(20f, col);
+            if (ObjectField(ref frame, "") == 1) { 
+                fflist.Frames[index] = frame;
+                EditorUtility.SetDirty(target);
+            }
+            Separator(20f, col);
 
             if (frame == null) 
             {
-                EditorGUI.LabelField(GetCurrentRect(0f,100f), "Undefined FrequencyFrame", EditorStyles.centeredGreyMiniLabel);
+                EditorGUI.LabelField(__GetCurrentRect(0f,100f), "Undefined FrequencyFrame", EditorStyles.centeredGreyMiniLabel);
             }
             else
             {

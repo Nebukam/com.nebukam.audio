@@ -35,7 +35,7 @@ namespace Nebukam.Audio.Editor
         {
 
             __RequireRectUpdate(true);
-            SetRect(new Rect(20f, 20f, Screen.width - 40f, 220f));
+            __SetRect(new Rect(20f, 20f, Screen.width - 40f, 220f));
 
             if (Button("Open Frequency Analyzer")) { FrequencyAnalyserWindow.ShowWindow(); }
             Space(4f);
@@ -61,7 +61,7 @@ namespace Nebukam.Audio.Editor
                     GLFill(c);
 
                     FrequencyAnalysis.DrawLines(GLArea, frame.bands);
-                    FrequencyAnalysis.DrawSpectrum(GLArea, FrequencyAnalysis.freqAnalyser.GetBands(frame.bands), SpectrumDrawMode.BANDS);
+                    FrequencyAnalysis.DrawSpectrum(GLArea, FrequencyAnalysis.activeAnalyser.GetBands(frame.bands), frame.inputScale, SpectrumDrawMode.BANDS);
                     FrequencyAnalysis.DrawFrame(GLArea, frame);
 
                     EndGL();
@@ -104,9 +104,9 @@ namespace Nebukam.Audio.Editor
             if (showOptions.HasFlag(FrameEditorVisibility.Scaling))
             {
                 __BeginCol(2);
-                changes += FloatField(ref frame.inputScale, "Input Scale");
+                changes += FloatFieldClamped(ref frame.inputScale, 0.001f, 1000f, "Input Scale");
                 __NextCol();
-                changes += FloatField(ref frame.outputScale, "Output Scale");
+                changes += FloatFieldClamped(ref frame.outputScale, 0.001f, 1000f, "Output Scale");
                 __EndCol();     
                 
                 Space(4f);

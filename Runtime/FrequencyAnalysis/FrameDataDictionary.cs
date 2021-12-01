@@ -41,6 +41,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public void Add(FrequencyFrame frame)
         {
             if (m_frames.IndexOf(frame) != -1) { return; }
+            m_frames.Add(frame);
             m_dataDic[frame] = new Sample();
         }
 

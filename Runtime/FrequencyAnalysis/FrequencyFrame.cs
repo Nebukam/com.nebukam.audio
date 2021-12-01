@@ -17,11 +17,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     public enum Bands
     {
-        Eight = 8,
-        Sixteen = 16,
-        ThirtyTwo = 32,
-        SixtyFour = 64,
-        HundredTwentyEight = 128
+        _8 = 8,
+        _16 = 16,
+        _32 = 32,
+        _64 = 64,
+        _128 = 128
     }
 
     public enum Tolerance
@@ -43,15 +43,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public OutputType output;
 
         public bool ON { get { return trigger > 0f; } }
+        public float Default { get { return (float)this; } }
+        public float Value(OutputType type)
+        {
+            if (type == OutputType.Trigger) { return trigger; }
+            if (type == OutputType.Peak) { return peak; }
+            if (type == OutputType.Average) { return average; }
+            if (type == OutputType.Sum) { return sum; }
+
+            return average;
+        }
 
         public static implicit operator float(Sample s)
         {
-            if (s.output == OutputType.Trigger) { return s.trigger; }
-            if (s.output == OutputType.Peak) { return s.peak; }
-            if (s.output == OutputType.Average) { return s.average; }
-            if (s.output == OutputType.Sum) { return s.sum; }
+            return s.Value(s.output);
+        }
 
-            return s.average;
+        public override string ToString()
+        {
+            return String.Format("A:{0}, T:{1}({5}), P:{2}, S:{3}, {4}", average, trigger, peak, sum, output, justTriggered);
         }
 
     }
@@ -61,13 +71,15 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public string ID;
         public Bands bands;
-        public OutputType range;
+        public OutputType output;
         public Tolerance tolerance;
         public int2 frequency;
         public float2 amplitude;
-        public float scale;
+        public float inputScale;
+        public float outputScale;
 
     }
+
 
 
     [System.Serializable]
@@ -82,7 +94,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public string ID = "Unidentified Sample";
 
         [Tooltip("Band reference (8 or 64)")]
-        public Bands bands = Bands.SixtyFour;
+        public Bands bands = Bands._64;
 
         [Tooltip("How to process the data within the frame")]
         public OutputType output = OutputType.Average;
@@ -119,7 +131,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             amplitude = new float2(
                 clamp(amplitude.x, 0f, 10f),
                 clamp(amplitude.y, 0f, 10f));
-
         }
 
 #endif
@@ -133,22 +144,24 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             if (copyID) { ID = data.ID; }
             bands = data.bands;
-            output = data.range;
+            output = data.output;
             tolerance = data.tolerance;
             frequency = data.frequency;
             amplitude = data.amplitude;
-            outputScale = data.scale;
+            inputScale = data.inputScale;
+            outputScale = data.outputScale;
         }
         
         public static implicit operator FrequencyFrameData(FrequencyFrame value) {
             return new FrequencyFrameData() {
                 ID = value.ID,
                 bands = value.bands,
-                range = value.output,
+                output = value.output,
                 tolerance = value.tolerance,
                 frequency = value.frequency,
                 amplitude = value.amplitude,
-                scale = value.outputScale
+                inputScale = value.inputScale,
+                outputScale = value.outputScale
             }; 
         }
 

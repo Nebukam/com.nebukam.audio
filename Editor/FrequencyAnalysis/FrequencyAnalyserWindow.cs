@@ -5,15 +5,22 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using Unity.Mathematics;
 using Nebukam.Editor;
 using static Nebukam.Editor.EditorDrawer;
 using static Nebukam.Editor.EditorGLDrawer;
 using Nebukam.Audio.FrequencyAnalysis;
 
-namespace Nebukam.Audio.Editor { 
+namespace Nebukam.Audio.Editor
+{
 
     public class FrequencyAnalyserWindow : EditorWindow
     {
+
+        const string PID_FrameList = "FAW_FrameList";
+        const string PID_AudioClip = "FAW_AudioClip";
+        const string PID_AudioClipTime = "FAW_AudioClipTime";
+        const string PID_AudioClipPreviewDuration = "FAW_AudioClipPreviewDuration";
 
         private const string m_title = "Frequency Analyser";
 
@@ -21,18 +28,39 @@ namespace Nebukam.Audio.Editor {
         private static AudioClip m_audioClip = null;
         private static float m_currentTime = 0f;
         private static float m_currentScale = 1f;
+        private static float m_previewDuration = 1f;
 
         [MenuItem("N:Toolkit/:Audio/Frequency Analyzer")]
         public static void ShowWindow()
         {
-            m_audioClip = Prefs.Get<AudioClip>("FAW_AudioClip", null);
-            EditorWindow.GetWindow(typeof(FrequencyAnalyserWindow), false, m_title, true);
+            FrequencyAnalyserWindow window = EditorWindow.GetWindow(typeof(FrequencyAnalyserWindow), false, m_title, true) as FrequencyAnalyserWindow;
+            window.Refresh();
         }
 
         public static void ShowWindow(FrequencyFrameList frameList)
         {
-            m_frequencyFrameList = frameList;
+            m_frequencyFrameList = Prefs.Set(PID_FrameList, frameList);
             ShowWindow();
+        }
+
+        private void Awake()
+        {
+            Refresh();
+        }
+
+        private void OnDestroy()
+        {
+            AudioPlayer.Stop();
+        }
+
+        public void Refresh()
+        {
+            m_audioClip = Prefs.Get<AudioClip>(PID_AudioClip, null);
+            AudioPlayer.clip = m_audioClip;
+
+            m_frequencyFrameList = Prefs.Get<FrequencyFrameList>(PID_FrameList, null);
+            m_currentTime = Prefs.Get(PID_AudioClipTime, 0f);
+            m_previewDuration = Prefs.Get(PID_AudioClipPreviewDuration, 0f);
         }
 
         public void Update()
@@ -40,53 +68,162 @@ namespace Nebukam.Audio.Editor {
             Repaint();
         }
 
+        private Rect m_windowRect;
+
         void OnGUI()
         {
 
             FrequencyAnalysis.SetCurrentFrameList(m_frequencyFrameList);
 
             __RequireRectUpdate(true);
-            SetRect(new Rect(10f, 10f, Screen.width - 20f, 20f));
+            m_windowRect = new Rect(10f, 10f, Screen.width - 20f, 20f);
+            __SetRect(m_windowRect);
+
+            EditorGUI.BeginDisabledGroup(Application.isPlaying);
+
+            #region User data
 
             __BeginCol(2);
             MiniLabel("Audio Clip");
             if (ObjectField(ref m_audioClip) == 1)
-                Prefs.Update("FAW_AudioClip", ref m_audioClip);
+                Prefs.Update(PID_AudioClip, ref m_audioClip);
 
             __NextCol();
             MiniLabel("Frame list");
             if (ObjectField(ref m_frequencyFrameList) == 1) { }
-                Prefs.Update("FAW_FrameList", ref m_frequencyFrameList);
+            Prefs.Update(PID_FrameList, ref m_frequencyFrameList);
 
             FrequencyAnalysis.SetCurrentFrameList(m_frequencyFrameList);
 
             __EndCol();
 
-            Space(8f);
-            Line();
-            Space(8f);
+            #endregion
 
-            FloatField(ref m_currentScale, "Frequency Band Scaling");
-            FrequencyAnalysis.freqAnalyser.scale = m_currentScale;
+            Separator(20f);
 
-            Space(8f);
-            Line();
-            Space(8f);
+            #region Bins & Scale
 
-            if (m_audioClip == null)
+            __BeginCol(2);
+
+            if (FloatField(ref m_currentScale, "Frequency Band Scaling") == 1)
+                FrequencyAnalysis.freqAnalyser.scale = m_currentScale;
+
+            __NextCol();
+
+            Bins currentBins = FrequencyAnalysis.freqAnalyser.frequencyBins;
+            if (EnumInlined<Bins>(ref currentBins, true, "Frequency bins") == 1)
+                FrequencyAnalysis.SetFrequencyBins(currentBins);
+
+            __EndCol();
+
+            #endregion
+
+            Separator(20f);
+
+            DrawPlayerControls();
+
+
+            EditorGUI.EndDisabledGroup();
+
+
+            DrawPreview();
+
+            Separator(20f);
+
+            if (Slider(ref m_previewDuration, 0.1f, 10f) == 1)
             {
-                Label("--:-- / --:--");
-                float fake = 0f;
-                Slider(ref fake, 0f, 0f);
+                Prefs.Set(PID_AudioClipPreviewDuration, m_previewDuration);
+            }
+
+        }
+
+        protected void UpdateAnalyser()
+        {
+            if (m_audioClip != null && Event.current.type == EventType.Repaint)
+                FrequencyAnalysis.Analyze(m_audioClip, m_currentTime);
+        }
+
+        protected void DrawPlayerControls()
+        {
+
+            string format_timeTotal = "--:--";
+            string format_timeElapsed = "--:--";
+            float timeTotal = 0f;
+
+            if (m_audioClip != null)
+            {
+                format_timeTotal = TimeSpan.FromSeconds((double)m_audioClip.length).ToString(@"mm\:ss");
+                format_timeElapsed = TimeSpan.FromSeconds((double)m_currentTime).ToString(@"mm\:ss");
+                timeTotal = m_audioClip.length;
             }
             else
             {
-                var ttl = TimeSpan.FromSeconds((double)m_audioClip.length).ToString(@"mm\:ss");
-                var ttf = TimeSpan.FromSeconds((double)m_currentTime).ToString(@"mm\:ss");
-                Label(ttf+" / "+ ttl);
-                Slider(ref m_currentTime, 0f, m_audioClip.length);
-                FrequencyAnalysis.Analyze(m_audioClip, m_currentTime);
+                m_currentTime = 0f;
             }
+
+            UpdateAnalyser();
+
+            __BeginInLine(50f);
+            Label(format_timeElapsed);
+            __NextInline(m_windowRect.width - 100f);
+            if (AudioPlayer.isPlaying) { m_currentTime = AudioPlayer.currentTime; }
+            Slider(ref m_currentTime, 0f, timeTotal);
+            Prefs.Set(PID_AudioClipTime, m_currentTime);
+            __NextInline(50f);
+            Label(format_timeTotal);
+            __EndInLine();
+
+            if (m_audioClip != null)
+            {
+                float2 f2 = new float2(10f, 50f);
+                MinMaxSlider(ref f2, new float2(0f, m_audioClip.length), "Loop range");
+            }
+
+            __SetRect(new Rect(m_windowRect.x + m_windowRect.width * 0.3f, Y, m_windowRect.width * 0.3f, 0f));
+
+            __BeginCol(5);
+            if (Button(">"))
+            {
+                AudioPlayer.Play(m_audioClip, m_currentTime);
+            }
+            __NextCol();
+            if (Button("||"))
+            {
+                AudioPlayer.currentTime = m_currentTime;
+                AudioPlayer.Pause(true);
+            }
+            __NextCol();
+            if (Button("x"))
+            {
+                AudioPlayer.Stop();
+            }
+            __NextCol();
+            if (Button("|<"))
+            {
+                //AudioPlayer.Pause(); 
+                AudioPlayer.currentTime = m_currentTime -= 1f / 60f;
+            }
+            __NextCol();
+            if (Button(">|"))
+            {
+                //AudioPlayer.Pause(); 
+                AudioPlayer.currentTime = m_currentTime += 1f / 60f;
+            }
+            __EndCol();
+
+
+            m_windowRect.y = Y;
+            __SetRect(m_windowRect);
+
+        }
+
+        #region Previews
+
+        protected void DrawPreview()
+        {
+
+            List<FrequencyFrame> frames = FrequencyAnalysis.activeFrames;
+            float[] bands = FrequencyAnalysis.activeBands;
 
             if (BeginGL(200f))
             {
@@ -95,32 +232,105 @@ namespace Nebukam.Audio.Editor {
                 c.a = 0.25f;
                 GLFill(c);
 
-                if (m_audioClip != null)
+                if (bands != null)
+                    FrequencyAnalysis.DrawSpectrum(GLArea, bands);
+
+                if (frames != null)
                 {
-                    FrequencyAnalysis.DrawSpectrum(GLArea, FrequencyAnalysis.freqAnalyser.freqBands64);
-                }
 
-                if (m_frequencyFrameList != null)
-                {
-                    FrequencyFrame frame;
-                    FrequencyAnalysis.DrawLines(GLArea, Bands.SixtyFour);
+                    FrequencyAnalysis.DrawLines(GLArea, Bands._64);
 
-                    for (int i = 0; i < m_frequencyFrameList.Frames.Count; i++)
-                    {
-                        frame = m_frequencyFrameList.Frames[i];
-                        FrequencyAnalysis.DrawFrame(GLArea, frame);
-                    }
+                    FrequencyAnalysis.__BeginDrawMultipleFrames();
 
+                    for (int i = 0; i < frames.Count; i++)
+                        FrequencyAnalysis.DrawFrame(GLArea, frames[i]);
+
+                    FrequencyAnalysis.__EndDrawMultipleFrames();
                 }
 
                 EndGL();
             }
 
-            EditorGUI.LabelField(GetCurrentRect(10f, -50f), "test");
+        }
+
+        protected void DrawRangePreview()
+        {
+
+            if (BeginGL(200f))
+            {
+
+                if (m_audioClip != null)
+                    FrequencyAnalysis.BatchAnalyze(m_audioClip, m_currentTime, m_previewDuration);
+
+                Color c = Color.black;
+                c.a = 0.25f;
+                GLFill(c);
+
+                Sample[,] samples = FrequencyAnalysis.batchedData;
+                int sampleCount = samples.GetLength(0);
+                int frameCount = samples.GetLength(1);
+                float sampleWidth = GLArea.width / sampleCount;
+                float height = GLArea.height;
+                float maxSampleSize = 1f; //TODO : Expose
+                float sampleHeight = GLArea.height / maxSampleSize;
+
+                for (int s = 0; s < sampleCount; s++)
+                {
+                    for (int f = 0; f < frameCount; f++)
+                    {
+                        FrequencyFrame frame = FrequencyAnalysis.data.frames[f];
+
+                        Sample sample = samples[s, f];
+                        float value = math.clamp(sample, 0f, maxSampleSize) * sampleHeight;
+
+                        if (sample.average == 0f) { continue; }
+
+                        Rect sRect = new Rect(
+                            sampleWidth * s,
+                            height - value,
+                            sampleWidth,
+                            value);
+
+                        if (frame.output == OutputType.Trigger)
+                        {
+                            if (sample.ON)
+                            {
+                                GL.Begin(GL.LINES);
+                                GL.Color(frame.color);
+                                sRect.y = 0f;
+                                sRect.height = height;
+                                sRect.x += sRect.width * 0.5f;
+                                sRect.width = 0f;
+                                GL.Vertex3(sRect.x, sRect.y, 0);
+                                GL.Vertex3(sRect.x, sRect.height, 0);
+                                GL.End();
+                            }
+                        }
+                        else
+                        {
+                            if (sample.output == OutputType.Peak)
+                                sRect.height = 2;
+
+                            GL.Begin(GL.QUADS);
+                            GL.Color(frame.color);
+                            GLRect(sRect);
+                            GL.End();
+                        }
+
+
+                    }
+                }
+
+                EndGL();
+            }
+
+            // Update analyser again since we batch-updated the visualisation is not up-to-date in other inspectors.
+            UpdateAnalyser();
 
         }
 
-        
+        #endregion
+
 
     }
 }

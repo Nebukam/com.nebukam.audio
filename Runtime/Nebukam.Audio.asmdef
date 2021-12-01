@@ -1,6 +1,7 @@
 {
     "name": "Nebukam.Audio",
     "references": [
+        "Unity.Burst",
         "Unity.Mathematics"
     ],
     "includePlatforms": [],

@@ -16,7 +16,8 @@
     "url": "https://github.com/Nebukam/com.nebukam.audio.git"
   },
   "dependencies": {
-    "com.unity.mathematics": "1.2.1"
+    "com.unity.mathematics": "1.2.1",
+	"com.unity.burst": "1.4.3"
   },
   "gitDependencies": {
 	"com.nebukam.editor": "https://github.com/Nebukam/com.nebukam.editor.git#0.0.1",

@@ -9,13 +9,86 @@ using System;
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
+    
+
+    public struct SamplingInfos
+    {
+
+        public int numSamples;
+        public float duration;
+        public int sampleRate; // Sample per second
+        public int pointCount; // Number of samples used for sample analysis
+        public int iterations; // Number of analysis iterations required to cover a single second
+        public float timeStep; // Timestep of the analysis at the current rate
+
+        /// <summary>
+        /// Number of analysis iterations required to cover a given duration
+        /// with the current parameters
+        /// </summary>
+        /// <param name="duration"></param>
+        /// <returns></returns>
+        public int GetIterations(float duration)
+        {
+            return (int)(iterations * duration);
+        }
+
+        public float GetClampedTime(float time)
+        {
+            return time;
+        }
+
+        public SamplingInfos(FrequencyAnalyser analyser, AudioClip clip)
+        {
+            numSamples = clip.samples;
+            duration = clip.length;
+            sampleRate = (int)(numSamples / duration);
+            pointCount = (int)analyser.pointCount;
+            iterations = sampleRate / (int)analyser.pointCount;
+            timeStep = 1f / iterations;
+        }
+
+    }
+
+    public struct SpectrumInfos
+    {
+
+        public int frequency;
+        public int sampleFrequency;
+        public int numChannels;
+        public int numSamples;
+        public int pointCount;
+
+        public int coverage; // Number of samples required to cover all channels
+
+        public SpectrumInfos(FrequencyAnalyser analyser, AudioClip clip)
+        {
+            frequency = clip.frequency;
+            numSamples = clip.samples;
+            numChannels = clip.channels;
+            pointCount = (int)analyser.pointCount;
+            coverage = pointCount * numChannels; // Signals are per-channel inlined in data
+            sampleFrequency = frequency / (int)analyser.frequencyBins;
+        }
+
+        public void EnsureCoverage(ref float[] array)
+        {
+            if (array.Length != coverage) { array = new float[coverage]; }
+        }
+
+        public int TimeIndex(float time)
+        {
+            return (int)(frequency * time);
+        }
+
+    }
+
     public class FrequencyAnalyser
     {
 
         #region data
 
-        protected int m_frequencyBins = 512;
-        protected uint m_fwdBufferSize = 1024;
+        protected Bins m_frequencyBins = Bins._512;
+        protected uint m_pointCount = 1024;
         protected FFTWindow m_windowType = FFTWindow.BlackmanHarris;
 
         protected float[] m_samples;
@@ -34,7 +107,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected AudioSource m_audioSource;
 
-        public int frequencyBins { get { return m_frequencyBins; } }
+        public Bins frequencyBins { get { return m_frequencyBins; } }
 
         public FFTWindow windowType
         {
@@ -54,6 +127,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public float[] freqBands64 { get { return m_freqBands64; } }
         public float[] freqBands128 { get { return m_freqBands128; } }
 
+        public uint pointCount { get { return m_pointCount; } }
+
         /// <summary>
         /// Return the float sample array matching selected bands
         /// </summary>
@@ -61,11 +136,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <returns></returns>
         public float[] GetBands(Bands bands)
         {
-            if (bands == Bands.Eight) return m_freqBands8;
-            if (bands == Bands.Sixteen) return m_freqBands16;
-            if (bands == Bands.ThirtyTwo) return m_freqBands32;
-            if (bands == Bands.SixtyFour) return m_freqBands64;
-            if (bands == Bands.HundredTwentyEight) return m_freqBands128;
+            if (bands == Bands._8) return m_freqBands8;
+            if (bands == Bands._16) return m_freqBands16;
+            if (bands == Bands._32) return m_freqBands32;
+            if (bands == Bands._64) return m_freqBands64;
+            if (bands == Bands._128) return m_freqBands128;
             return m_freqBands128;
         }
 
@@ -99,22 +174,27 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #endregion
 
-        public FrequencyAnalyser(int bins = 512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
+        public FrequencyAnalyser(Bins bins = Bins._512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
+        {
+            Init(bins, FFTW);
+        }
+
+        public void Init(Bins bins = Bins._512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
         {
 
             m_frequencyBins = bins;
-            m_fwdBufferSize = (uint)(m_frequencyBins * 2);
+            m_pointCount = (uint)((int)m_frequencyBins * 2);
             m_windowType = FFTW;
 
-            m_samples = new float[m_frequencyBins];
-            m_sampleBuffer = new float[m_frequencyBins];
+            m_samples = new float[(int)m_frequencyBins];
+            m_sampleBuffer = new float[(int)m_frequencyBins];
 
-            m_fwdWindowCoefs = DSP.Window.Coefficients(DSP.Window.Type.Hanning, m_fwdBufferSize);
+            m_fwdWindowCoefs = DSP.Window.Coefficients(DSP.Window.Type.Hanning, m_pointCount);
             m_scaleFactor = DSP.Window.ScaleFactor.Signal(m_fwdWindowCoefs);
-            m_multiChannelSamples = new float[m_fwdBufferSize * 2]; //assume 2-channel audio first
-            m_fwdSpectrumChunks = new float[m_fwdBufferSize];
+            m_multiChannelSamples = new float[m_pointCount * 2]; //assume 2-channel audio as default
+            m_fwdSpectrumChunks = new float[m_pointCount];
 
-            m_FFT.Initialize(m_fwdBufferSize);
+            m_FFT.Initialize(m_pointCount);
 
         }
 
@@ -156,13 +236,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected void UpdateFreqBands64()
         {
             // 22050 / 512 = 43hz per sample
-            // 10 - 60 hz
-            // 60 - 250
-            // 250 - 500
-            // 500 - 2000
-            // 2000 - 4000
-            // 4000 - 6000
-            // 6000 - 20000
+            // 10 - 60 hz - 1.3
+            // 60 - 250 - 4
+            // 250 - 500 - 5.8
+            // 500 - 2000 - 34
+            // 2000 - 4000 - 46
+            // 4000 - 6000 - 46
+            // 6000 - 20000 - 325
 
             int count = 0;
             int sampleCount = 1;
@@ -194,11 +274,61 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #endregion
 
+        #region Alt band update
+
+        protected void UpdateFrequencyBands()
+        {
+
+            // 22050 / 512 = 43hz per sample
+            // 10 - 60 hz
+            // 60 - 250
+            // 250 - 500
+            // 500 - 2000
+            // 2000 - 4000
+            // 4000 - 6000
+            // 6000 - 20000
+
+            UpdateFrequencyBand(m_freqBands8);
+            UpdateFrequencyBand(m_freqBands16);
+            UpdateFrequencyBand(m_freqBands32);
+            UpdateFrequencyBand(m_freqBands64);
+            UpdateFrequencyBand(m_freqBands128);
+
+
+        }
+
+        protected void UpdateFrequencyBand(float[] freqBands)
+        {
+
+            int 
+                bandCount = freqBands.Length,
+                index = 0;
+
+            BandInfos[] bands = Octaves.GetBandInfos(bandCount);
+
+            for (int i = 0; i < bandCount; i++)
+            {
+                float average = 0;
+
+                for (int s = 0, n = bands[i].Length(m_frequencyBins); s < n; s++)
+                {
+                    average += m_samples[index] * (index + 1);
+                    index++;
+                }
+
+                average /= index;
+                freqBands[i] = average * m_scale;
+            }
+
+        }
+
+        #endregion
+
         /// <summary>
         /// Update the sampling values & spectrum data based on the current audioSource & clip
         /// </summary>
         /// <param name="forward"></param>
-        public void Analyze(float forward = 0f)
+        public void Analyse(float forward = 0f)
         {
             //---   POPULATE SAMPLES
             forward = abs(forward);
@@ -214,7 +344,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 if (forward == 0f)
                     m_audioSource.GetSpectrumData(m_sampleBuffer, 0, m_windowType);
                 else
-                    GetSpectrumData(m_audioSource.clip, m_sampleBuffer, audioSource.time + forward);
+                    ReadCombinedSpectrumData(m_audioSource.clip, audioSource.time + forward);
 
                 if (m_doSmooth)
                 {
@@ -238,8 +368,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            UpdateFreqBands8();
-            UpdateFreqBands64();
+            //UpdateFreqBands8();
+            //UpdateFreqBands64();
+            UpdateFrequencyBands();
 
         }
 
@@ -247,12 +378,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// Update the sampling values & spectrum data based on the current audioSource
         /// </summary>
         /// <param name="time"></param>
-        public void AnalyzeAt(AudioClip clip, float time)
+        public void AnalyseAt(AudioClip clip, float time)
         {
             //---   POPULATE SAMPLES
 
 
-            GetSpectrumData(clip, m_sampleBuffer, time);
+            ReadCombinedSpectrumData(clip, time);
 
 
             for (int i = 0; i < m_samples.Length; i++)
@@ -282,26 +413,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
             */
 
-            UpdateFreqBands8();
-            UpdateFreqBands64();
+            //UpdateFreqBands8();
+            //UpdateFreqBands64();
+            UpdateFrequencyBands();
 
         }
 
-        /// <summary>
-        /// Update the values in the given samplingData with
-        /// the most recently computed ones
-        /// </summary>
-        /// <param name="frameDictionary"></param>
-        public void UpdateFrameData(FrameDataDictionary frameDictionary)
-        {
-            List<FrequencyFrame> frames = frameDictionary.frames;
-            FrequencyFrame frame;
-            for (int i = 0, n = frames.Count; i < n; i++)
-            {
-                frame = frames[i];
-                frameDictionary.Set(frame, ReadFrame(frame));
-            }
-        }
+        #region Frame reading
 
         /// <summary>
         /// Compute a single Sample data based on a given SamplingDefinition
@@ -318,6 +436,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             float ampEnd = ampBegin + frame.amplitude.y;
             float peak = 0f;
             float sum = 0f;
+            float inputScale = frame.inputScale;
             float bandValue, bandValueRemapped;
 
             float[] bands = GetBands(frame.bands);
@@ -326,9 +445,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
             int seekLength = clamp(frame.frequency.x + sampleWidth, 0, bands.Length);
             int reached = 0;
 
+
             for (int i = frame.frequency.x; i < seekLength; i++)
             {
-                bandValue = bands[i];
+                bandValue = bands[i] * inputScale;
 
                 if (bandValue >= ampBegin) { reached++; }
 
@@ -362,52 +482,142 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
-        #region FFT & Sampling
+        /// <summary>
+        /// Update the values in the given samplingData with
+        /// the most recently computed ones
+        /// </summary>
+        /// <param name="frameDictionary"></param>
+        public void ReadDataDictionary(FrameDataDictionary frameDictionary)
+        {
+            List<FrequencyFrame> frames = frameDictionary.frames;
+            FrequencyFrame frame;
+            for (int i = 0, n = frames.Count; i < n; i++)
+            {
+                frame = frames[i];
+                frameDictionary.Set(frame, ReadFrame(frame));
+            }
+        }
 
-        protected void GetSpectrumData(AudioClip clip, float[] buffer, float seek)
+        /// <summary>
+        /// Analyze & read a time range into a two-dimensional Sample array.
+        /// Warning : this is super expensive.
+        /// </summary>
+        /// <param name="clip"></param>
+        /// <param name="time"></param>
+        /// <param name="duration"></param>
+        /// <param name="sampleArray"></param>
+        public void ReadRange(AudioClip clip, FrameDataDictionary frames, float time, float duration, ref Sample[,] sampleArray)
         {
 
-            int sampleRate = clip.frequency;
-            int numChannels = clip.channels;
-            int multiChannelSampleSize = (int)m_fwdBufferSize * numChannels;
-            int offset = (int)((float)sampleRate * seek);
+            List<FrequencyFrame> frameList = frames.frames;
+            SamplingInfos infos = new SamplingInfos(this, clip);
+            int iterations = infos.GetIterations(duration);
+            int frameCount = frameList.Count;
 
-            if (m_multiChannelSamples.Length != multiChannelSampleSize) //Re-adjust buffer
-                m_multiChannelSamples = new float[multiChannelSampleSize];
+            if (sampleArray.GetLength(0) != iterations
+                || sampleArray.GetLength(1) != frameCount)
+                sampleArray = new Sample[iterations, frameCount];
 
-            clip.GetData(m_multiChannelSamples, offset);
-
-            int numProcessed = 0;
-            float combinedChannelAverage = 0f;
-            for (int i = 0; i < m_multiChannelSamples.Length; i++)
+            for (int i = 0; i < iterations; i++)
             {
-                combinedChannelAverage += m_multiChannelSamples[i];
+                AnalyseAt(clip, time + i * infos.timeStep);
 
-                // Each time we have processed all channels samples for a point in time, we will store the average of the channels combined
-                if ((i + 1) % numChannels == 0)
-                {
-                    m_fwdSpectrumChunks[numProcessed] = (combinedChannelAverage / numChannels) * m_fwdWindowCoefs[numProcessed];
-                    numProcessed++;
-                    combinedChannelAverage = 0f;
-
-                }
-            }
-
-            ComplexFloat[] fftSpectrum = m_FFT.Execute(m_fwdSpectrumChunks);
-
-            for (int i = 0, n = buffer.Length; i < n; i++)
-            {
-                buffer[i] = (float)(fftSpectrum[i].Magnitude * m_scaleFactor);
+                for (int f = 0; f < frameCount; f++)
+                    sampleArray[i, f] = ReadFrame(frameList[f]);
             }
 
         }
 
         #endregion
 
-        public float map(float s, float a1, float a2, float b1, float b2)
+        #region FFT & Sampling
+
+        protected SpectrumInfos ReadCombinedSpectrumData(AudioClip clip, float time)
+        {
+
+            SpectrumInfos spectrum = new SpectrumInfos(this, clip);
+            spectrum.EnsureCoverage(ref m_multiChannelSamples);
+
+            int offsetSamples = spectrum.TimeIndex(time);
+            if(m_multiChannelSamples.Length + offsetSamples >= clip.samples) { return spectrum; }
+
+            clip.GetData(m_multiChannelSamples, offsetSamples);
+
+            int index = 0;
+            float combined = 0f;
+
+            for (int i = 0; i < m_multiChannelSamples.Length; i++)
+            {
+                combined += m_multiChannelSamples[i];
+
+                // Each time we have processed all channels samples for a point in time, we will store the average of the channels combined
+                if ((i + 1) % spectrum.numChannels == 0)
+                {
+                    m_fwdSpectrumChunks[index] = (combined / spectrum.numChannels) * m_fwdWindowCoefs[index];
+                    index++;
+                    combined = 0f;
+
+                }
+            }
+
+            ComplexFloat[] fftSpectrum = m_FFT.Execute(m_fwdSpectrumChunks);
+
+            for (int i = 0, n = m_sampleBuffer.Length; i < n; i++)
+                m_sampleBuffer[i] = (float)(fftSpectrum[i].Magnitude * m_scaleFactor);
+
+            return spectrum;
+
+        }
+
+        /// <summary>
+        /// Fill a buffer
+        /// </summary>
+        /// <param name="clip"></param>
+        /// <param name="chan"></param>
+        /// <param name="buffer"></param>
+        /// <param name="time"></param>
+        protected SpectrumInfos ReadChannelSpectrumData(AudioClip clip, int chan, float time)
+        {
+
+            SpectrumInfos spectrum = new SpectrumInfos(this, clip);
+            spectrum.EnsureCoverage(ref m_multiChannelSamples);
+
+            int offsetSamples = spectrum.TimeIndex(time);
+            if (m_multiChannelSamples.Length + offsetSamples >= clip.samples) { return spectrum; }
+
+            clip.GetData(m_multiChannelSamples, spectrum.TimeIndex(time));
+
+            int index = 0;
+            for (int i = 0; i < m_multiChannelSamples.Length; i+= spectrum.numChannels)
+            {
+                m_fwdSpectrumChunks[index] = m_multiChannelSamples[i+chan] * m_fwdWindowCoefs[index];
+                index++;
+            }
+
+            ComplexFloat[] fftSpectrum = m_FFT.Execute(m_fwdSpectrumChunks);
+
+            for (int i = 0, n = m_sampleBuffer.Length; i < n; i++)
+                m_sampleBuffer[i] = (float)(fftSpectrum[i].Magnitude * m_scaleFactor);
+
+            return spectrum;
+
+        }
+
+        #endregion
+
+        #region utils
+
+        internal void EnsureSize(ref float[] array, int size)
+        {
+            if(array.Length != size) { array = new float[size]; }
+        }
+
+        internal float map(float s, float a1, float a2, float b1, float b2)
         {
             return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
         }
+
+        #endregion
 
     }
 

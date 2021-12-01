@@ -32,6 +32,60 @@ namespace Nebukam.Audio.Editor
         public static FrequencyAnalyser freqAnalyser;
         public static FrameDataDictionary data;
 
+        public static FrequencyAnalyser activeAnalyser
+        {
+            get
+            {
+                if (Application.isPlaying)
+                {
+                    if (NFAAnalyser.m_registeredAnalysers != null
+                    && NFAAnalyser.m_registeredAnalysers.Count > 0)
+                    {
+                        NFAAnalyser analyser = NFAAnalyser.m_registeredAnalysers[0];
+                        return analyser.analyser;
+                    }
+                }
+
+                return freqAnalyser;
+            }
+        }
+
+        public static List<FrequencyFrame> activeFrames
+        {
+            get
+            {
+                if (Application.isPlaying)
+                {
+                    if (NFAAnalyser.m_registeredAnalysers != null
+                    && NFAAnalyser.m_registeredAnalysers.Count > 0)
+                    {
+                        NFAAnalyser analyser = NFAAnalyser.m_registeredAnalysers[0];
+                        return analyser.dataDictionary.frames;
+                    }
+                }
+
+                return data.frames;
+            }
+        }
+
+        public static float[] activeBands
+        {
+            get
+            {
+                if (Application.isPlaying)
+                {
+                    if (NFAAnalyser.m_registeredAnalysers != null
+                    && NFAAnalyser.m_registeredAnalysers.Count > 0)
+                    {
+                        NFAAnalyser analyser = NFAAnalyser.m_registeredAnalysers[0];
+                        return analyser.analyser.freqBands64;
+                    }
+                }
+
+                return freqAnalyser.freqBands64;
+            }
+        }
+
         static FrequencyAnalysis()
         {
             freqAnalyser = new FrequencyAnalyser();
@@ -48,14 +102,35 @@ namespace Nebukam.Audio.Editor
 
         }
 
+        public static void SetFrequencyBins(Bins bins)
+        {
+            if(freqAnalyser.frequencyBins != bins)
+            {
+                freqAnalyser.Init(bins);
+            }
+        }
+
         public static void Analyze(AudioClip clip, float time)
         {
 
             if (time < 0f) { time = 0f; }
             if (time > clip.length) { time = clip.length; }
 
-            freqAnalyser.AnalyzeAt(clip, time);
-            freqAnalyser.UpdateFrameData(data);
+            freqAnalyser.AnalyseAt(clip, time);
+            freqAnalyser.ReadDataDictionary(data);
+
+        }
+
+        public static float batchedDataStartTime = 0f;
+        public static float batchedDataDuration = 0f;
+        public static Sample[,] batchedData = new Sample[0, 0];
+
+        public static void BatchAnalyze(AudioClip clip, float from, float duration)
+        {
+
+            batchedDataStartTime = from;
+            batchedDataDuration = duration;
+            freqAnalyser.ReadRange(clip, data, from, duration, ref batchedData);
 
         }
 
@@ -97,7 +172,7 @@ namespace Nebukam.Audio.Editor
         /// </summary>
         /// <param name="area"></param>
         /// <param name="frequencies"></param>
-        internal static void DrawSpectrum(Rect area, float[] frequencies, SpectrumDrawMode draw = SpectrumDrawMode.ALL)
+        internal static void DrawSpectrum(Rect area, float[] frequencies, float scale = 1f, SpectrumDrawMode draw = SpectrumDrawMode.ALL)
         {
 
             int n = frequencies.Length;
@@ -108,10 +183,10 @@ namespace Nebukam.Audio.Editor
             {
 
                 GL.Begin(GL.QUADS);
-                GLCol(Color.gray, 0.5f);
+                GLCol(Color.gray, 0.25f);
                 for (int i = 0; i < n; i++)
                 {
-                    sample = clamp(frequencies[i], 0f, 1f);
+                    sample = clamp(frequencies[i] * scale, 0f, 1f);
                     x = i * inc;
                     h = sample * area.height;
                     GLRect(new Rect(x, y - h, inc, h));
@@ -125,7 +200,7 @@ namespace Nebukam.Audio.Editor
                 GLCol(Color.red);
                 for (int i = 0; i < n; i++)
                 {
-                    sample = clamp(frequencies[i], 0f, 1f); ;
+                    sample = clamp(frequencies[i] * scale, 0f, 1f); ;
                     x = i * inc + hinc;
                     h = sample * area.height;
                     GL.Vertex3(x, y, 0);
@@ -137,10 +212,10 @@ namespace Nebukam.Audio.Editor
             if (draw.HasFlag(SpectrumDrawMode.CURVE))
             {
                 GL.Begin(GL.LINE_STRIP);
-                GLCol(Color.green, 0.5f);
+                GLCol(Color.green, 0.25f);
                 for (int i = 0; i < n; i++)
                 {
-                    sample = clamp(frequencies[i], 0f, 1f); ;
+                    sample = clamp(frequencies[i] * scale, 0f, 1f); ;
                     x = i * inc + hinc;
                     h = sample * area.height;
                     GL.Vertex3(x, y - h, 0);
@@ -164,11 +239,57 @@ namespace Nebukam.Audio.Editor
             GL.End();
 
             Vector2 s = new Vector2(100f, 100f);
-            centeredLabel.normal.textColor = frame.color;
+            
+
             _r = new Rect(_r.center - s * 0.5f, s);
 
-            GUI.Label(_r, "0.0", centeredLabel);
+            Sample sample = data.Get(frame);
+            FrameLabel labelInfos = new FrameLabel() {
+                rect = _r,
+                sample = sample,
+                color = frame.color
+            };
 
+            if (m_drawingMultipleFrames)
+                m_frameLabels.Add(labelInfos);
+            else
+                PrintFrameLabel(labelInfos);
+
+        }
+
+        private struct FrameLabel
+        {
+            public Rect rect;
+            public Sample sample;
+            public Color color;
+        }
+
+        private static List<FrameLabel> m_frameLabels = new List<FrameLabel>();
+        private static bool m_drawingMultipleFrames = false;
+
+        internal static void __BeginDrawMultipleFrames()
+        {
+            m_frameLabels.Clear();
+            m_drawingMultipleFrames = true;
+        }
+
+        /// <summary>
+        /// Required to draw labels AFTER GL has finished drawing.
+        /// </summary>
+        internal static void __EndDrawMultipleFrames()
+        {
+            m_drawingMultipleFrames = false;
+
+            for (int i = 0; i < m_frameLabels.Count; i++)
+                PrintFrameLabel(m_frameLabels[i]);
+
+            m_frameLabels.Clear();
+        }
+
+        private static void PrintFrameLabel(FrameLabel labelInfos)
+        {
+            centeredLabel.normal.textColor = labelInfos.color;
+            GUI.Label(labelInfos.rect, labelInfos.sample.Default.ToString("0.00"), centeredLabel);
         }
 
         #endregion
