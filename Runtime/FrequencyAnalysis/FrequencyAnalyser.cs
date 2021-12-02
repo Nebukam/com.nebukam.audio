@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using System.Numerics;
 using System;
+using Unity.Burst;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -49,39 +50,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     }
 
-    public struct SpectrumInfos
-    {
-
-        public int frequency;
-        public int sampleFrequency;
-        public int numChannels;
-        public int numSamples;
-        public int pointCount;
-
-        public int coverage; // Number of samples required to cover all channels
-
-        public SpectrumInfos(FrequencyAnalyser analyser, AudioClip clip)
-        {
-            frequency = clip.frequency;
-            numSamples = clip.samples;
-            numChannels = clip.channels;
-            pointCount = (int)analyser.pointCount;
-            coverage = pointCount * numChannels; // Signals are per-channel inlined in data
-            sampleFrequency = frequency / (int)analyser.frequencyBins;
-        }
-
-        public void EnsureCoverage(ref float[] array)
-        {
-            if (array.Length != coverage) { array = new float[coverage]; }
-        }
-
-        public int TimeIndex(float time)
-        {
-            return (int)(frequency * time);
-        }
-
-    }
-
+    [BurstCompile]
     public class FrequencyAnalyser
     {
 
@@ -200,6 +169,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Frequency bands update
 
+        /*
         protected void UpdateFreqBands8()
         {
             // 22050 / 512 = 43hz per sample
@@ -271,10 +241,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
 
         }
-
-        #endregion
-
-        #region Alt band update
+        */
 
         protected void UpdateFrequencyBands()
         {
@@ -293,7 +260,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             UpdateFrequencyBand(m_freqBands32);
             UpdateFrequencyBand(m_freqBands64);
             UpdateFrequencyBand(m_freqBands128);
-
 
         }
 
@@ -380,41 +346,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <param name="time"></param>
         public void AnalyseAt(AudioClip clip, float time)
         {
-            //---   POPULATE SAMPLES
-
-
+            
             ReadCombinedSpectrumData(clip, time);
 
-
             for (int i = 0; i < m_samples.Length; i++)
-            {
                 m_samples[i] = m_sampleBuffer[i];
-            }
 
-            /*
-            if (m_doSmooth)
-            {
-                float time = Time.deltaTime;
-
-                for (int i = 0; i < m_samples.Length; i++)
-                {
-                    if (m_sampleBuffer[i] > m_samples[i])
-                        m_samples[i] = m_sampleBuffer[i];
-                    else
-                        m_samples[i] = lerp(m_samples[i], m_sampleBuffer[i], time * m_smoothDownRate);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < m_samples.Length; i++)
-                {
-                    m_samples[i] = m_sampleBuffer[i];
-                }
-            }
-            */
-
-            //UpdateFreqBands8();
-            //UpdateFreqBands64();
             UpdateFrequencyBands();
 
         }
@@ -535,7 +472,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected SpectrumInfos ReadCombinedSpectrumData(AudioClip clip, float time)
         {
 
-            SpectrumInfos spectrum = new SpectrumInfos(this, clip);
+            SpectrumInfos spectrum = new SpectrumInfos(m_frequencyBins, clip);
             spectrum.EnsureCoverage(ref m_multiChannelSamples);
 
             int offsetSamples = spectrum.TimeIndex(time);
@@ -563,7 +500,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             ComplexFloat[] fftSpectrum = m_FFT.Execute(m_fwdSpectrumChunks);
 
             for (int i = 0, n = m_sampleBuffer.Length; i < n; i++)
-                m_sampleBuffer[i] = (float)(fftSpectrum[i].Magnitude * m_scaleFactor);
+                m_sampleBuffer[i] = (float)(fftSpectrum[i].magnitude * m_scaleFactor);
 
             return spectrum;
 
@@ -579,7 +516,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected SpectrumInfos ReadChannelSpectrumData(AudioClip clip, int chan, float time)
         {
 
-            SpectrumInfos spectrum = new SpectrumInfos(this, clip);
+            SpectrumInfos spectrum = new SpectrumInfos(m_frequencyBins, clip);
             spectrum.EnsureCoverage(ref m_multiChannelSamples);
 
             int offsetSamples = spectrum.TimeIndex(time);
@@ -597,7 +534,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             ComplexFloat[] fftSpectrum = m_FFT.Execute(m_fwdSpectrumChunks);
 
             for (int i = 0, n = m_sampleBuffer.Length; i < n; i++)
-                m_sampleBuffer[i] = (float)(fftSpectrum[i].Magnitude * m_scaleFactor);
+                m_sampleBuffer[i] = (float)(fftSpectrum[i].magnitude * m_scaleFactor);
 
             return spectrum;
 

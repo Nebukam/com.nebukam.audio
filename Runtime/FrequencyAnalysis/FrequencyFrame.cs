@@ -30,6 +30,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         Strict // All frequencies need to be accounted for
     }
 
+
     public struct Sample
     {
 
@@ -68,8 +69,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     public struct FrequencyFrameData
     {
-
-        public string ID;
         public Bands bands;
         public OutputType output;
         public Tolerance tolerance;
@@ -77,7 +76,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public float2 amplitude;
         public float inputScale;
         public float outputScale;
-
     }
 
 
@@ -140,9 +138,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="data"></param>
         /// <param name="copyID"></param>
-        public void Copy(FrequencyFrameData data, bool copyID = false)
+        public void Copy(FrequencyFrameData data)
         {
-            if (copyID) { ID = data.ID; }
             bands = data.bands;
             output = data.output;
             tolerance = data.tolerance;
@@ -154,7 +151,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         
         public static implicit operator FrequencyFrameData(FrequencyFrame value) {
             return new FrequencyFrameData() {
-                ID = value.ID,
                 bands = value.bands,
                 output = value.output,
                 tolerance = value.tolerance,

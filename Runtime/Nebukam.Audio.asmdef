@@ -2,7 +2,9 @@
     "name": "Nebukam.Audio",
     "references": [
         "Unity.Burst",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Nebukam.JobAssist"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -190,8 +190,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             });
 
             // DC and Fs/2 Points are scaled differently, since they have only a real part
-            result[0] = new ComplexFloat(result[0].Real / sqrt(2), 0.0f);
-            result[mLengthHalf - 1] = new ComplexFloat(result[mLengthHalf - 1].Real / sqrt(2), 0.0f);
+            result[0] = new ComplexFloat(result[0].real / sqrt(2), 0.0f);
+            result[mLengthHalf - 1] = new ComplexFloat(result[mLengthHalf - 1].real / sqrt(2), 0.0f);
 
             return result;
         }
@@ -223,8 +223,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             });
 
             // DC and Fs/2 Points are scaled differently, since they have only a real part
-            result[0] = new ComplexFloat(result[0].Real / sqrt(2), 0.0f);
-            result[mLengthHalf - 1] = new ComplexFloat(result[mLengthHalf - 1].Real / sqrt(2), 0.0f);
+            result[0] = new ComplexFloat(result[0].real / sqrt(2), 0.0f);
+            result[mLengthHalf - 1] = new ComplexFloat(result[mLengthHalf - 1].real / sqrt(2), 0.0f);
 
             return result;
         }
@@ -492,8 +492,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             Array.Copy(unswizzle, result, mLengthHalf);
 
             // DC and Fs/2 Points are scaled differently, since they have only a real part
-            result[0] = new ComplexFloat(result[0].Real / sqrt(2), 0.0f);
-            result[mLengthHalf - 1] = new ComplexFloat(result[mLengthHalf - 1].Real / sqrt(2), 0.0f);
+            result[0] = new ComplexFloat(result[0].real / sqrt(2), 0.0f);
+            result[mLengthHalf - 1] = new ComplexFloat(result[mLengthHalf - 1].real / sqrt(2), 0.0f);
 
             return result;
         }
@@ -1236,7 +1236,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 float[] magSquared = new float[np];
                 for (uint i = 0; i < np; i++)
                 {
-                    float mag = rawFFT[i].Magnitude;
+                    float mag = rawFFT[i].magnitude;
                     magSquared[i] = mag * mag;
                 }
 
@@ -1255,7 +1255,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 float[] mag = new float[np];
                 for (uint i = 0; i < np; i++)
                 {
-                    mag[i] = rawFFT[i].Magnitude;
+                    mag[i] = rawFFT[i].magnitude;
                 }
 
                 return mag;
@@ -1273,7 +1273,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 float[] mag = new float[np];
                 for (uint i = 0; i < np; i++)
                 {
-                    float magVal = rawFFT[i].Magnitude;
+                    float magVal = rawFFT[i].magnitude;
 
                     if (magVal <= 0.0)
                         magVal = float.Epsilon;
@@ -1298,7 +1298,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 float[] phase = new float[np];
                 for (uint i = 0; i < np; i++)
                 {
-                    phase[i] = rawFFT[i].Phase * sf;
+                    phase[i] = rawFFT[i].phase * sf;
                 }
 
                 return phase;
@@ -1316,7 +1316,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 float[] phase = new float[np];
                 for (uint i = 0; i < np; i++)
                 {
-                    phase[i] = rawFFT[i].Phase;
+                    phase[i] = rawFFT[i].phase;
                 }
 
                 return phase;
