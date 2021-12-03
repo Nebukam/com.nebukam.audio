@@ -10,8 +10,9 @@ using Nebukam.Editor;
 using static Nebukam.Editor.EditorDrawer;
 using static Nebukam.Editor.EditorGLDrawer;
 using Nebukam.Audio.FrequencyAnalysis;
+using Nebukam.Audio.Editor;
 
-namespace Nebukam.Audio.Editor
+namespace Nebukam.Audio.FrequencyAnalysis.Editor
 {
 
     public class FrequencyAnalyserWindow : EditorWindow
@@ -80,6 +81,8 @@ namespace Nebukam.Audio.Editor
             __SetRect(m_windowRect);
 
             EditorGUI.BeginDisabledGroup(Application.isPlaying);
+
+            if (Button("Refresh")) { Refresh(); }
 
             #region User data
 
@@ -238,7 +241,7 @@ namespace Nebukam.Audio.Editor
                 if (frames != null)
                 {
 
-                    FrequencyAnalysis.DrawLines(GLArea, Bands._64);
+                    FrequencyAnalysis.DrawLines(GLArea, Bands.band64);
 
                     FrequencyAnalysis.__BeginDrawMultipleFrames();
 

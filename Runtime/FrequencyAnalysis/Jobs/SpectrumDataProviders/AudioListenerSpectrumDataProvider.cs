@@ -25,7 +25,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             SpectrumInfos sinfos = new SpectrumInfos();
             sinfos.frequencyBins = frequencyBins;
-            sinfos.frequency = 22050; //TODO : Need to verify this 
+            sinfos.frequency = AudioSettings.outputSampleRate; 
             sinfos.numSamples = 0;
             sinfos.numChannels = 1;
             sinfos.pointCount = (int)frequencyBins * 2;

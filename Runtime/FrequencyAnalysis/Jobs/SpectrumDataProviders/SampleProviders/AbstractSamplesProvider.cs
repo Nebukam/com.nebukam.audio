@@ -43,7 +43,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected internal NativeArray<float> m_outputSamples = new NativeArray<float>(0, Allocator.Persistent);
         public NativeArray<float> outputSamples { get { return m_outputSamples; } }
 
-        public Bins frequencyBins { get; set; } = Bins._512;
+        public Bins frequencyBins { get; set; } = Bins.length512;
 
         protected internal AudioClip m_lockedClip;
         protected internal AudioClip m_clip;

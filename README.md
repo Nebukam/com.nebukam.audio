@@ -8,6 +8,7 @@
 
 # Credits
 - Frequency isolation is _heavily_ inspired by [Soundkeys](https://www.maxon.net/en/red-giant-complete/trapcode-suite/sound-keys)
-- The FFT arythmetic is a refactor of [DSPLib](https://www.codeproject.com/Articles/1107480/DSPLib-FFT-DFT-Fourier-Transform-Library-for-NET-6)
+- The FFT arythmetic is a Unity-friendly refactor of [DSPLib](https://www.codeproject.com/Articles/1107480/DSPLib-FFT-DFT-Fourier-Transform-Library-for-NET-6)
 - The demo scene uses [Atmosphere](https://freesound.org/people/DaveJf/sounds/608928/) by [DaveJf](https://freesound.org/people/DaveJf/)  
 <sup>_downloaded from [freesound.org](https://freesound.org/)_</sup>
+- Also includes an audio extraction from [Hearing Test HD](https://www.youtube.com/watch?v=H-iCZElJ8m0) to demonstrate & test the sampling accuracy

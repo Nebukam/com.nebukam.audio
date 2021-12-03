@@ -56,7 +56,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region data
 
-        protected Bins m_frequencyBins = Bins._512;
+        protected Bins m_frequencyBins = Bins.length512;
         protected uint m_pointCount = 1024;
         protected FFTWindow m_windowType = FFTWindow.BlackmanHarris;
 
@@ -105,11 +105,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <returns></returns>
         public float[] GetBands(Bands bands)
         {
-            if (bands == Bands._8) return m_freqBands8;
-            if (bands == Bands._16) return m_freqBands16;
-            if (bands == Bands._32) return m_freqBands32;
-            if (bands == Bands._64) return m_freqBands64;
-            if (bands == Bands._128) return m_freqBands128;
+            if (bands == Bands.band8) return m_freqBands8;
+            if (bands == Bands.band16) return m_freqBands16;
+            if (bands == Bands.band32) return m_freqBands32;
+            if (bands == Bands.band64) return m_freqBands64;
+            if (bands == Bands.band128) return m_freqBands128;
             return m_freqBands128;
         }
 
@@ -143,12 +143,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #endregion
 
-        public FrequencyAnalyser(Bins bins = Bins._512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
+        public FrequencyAnalyser(Bins bins = Bins.length512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
         {
             Init(bins, FFTW);
         }
 
-        public void Init(Bins bins = Bins._512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
+        public void Init(Bins bins = Bins.length512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
         {
 
             m_frequencyBins = bins;
@@ -270,7 +270,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 bandCount = freqBands.Length,
                 index = 0;
 
-            BandInfos[] bands = Octaves.GetBandInfos(bandCount);
+            BandInfos[] bands = FrequencyRanges.GetBandInfos(bandCount);
 
             for (int i = 0; i < bandCount; i++)
             {

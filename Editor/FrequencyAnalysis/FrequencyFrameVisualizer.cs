@@ -6,7 +6,7 @@ using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using Nebukam.Audio.FrequencyAnalysis;
 
-namespace Nebukam.Audio.Editor
+namespace Nebukam.Audio.FrequencyAnalysis.Editor
 {
 
     public class FrequencyFrameVisualizer : MonoBehaviour

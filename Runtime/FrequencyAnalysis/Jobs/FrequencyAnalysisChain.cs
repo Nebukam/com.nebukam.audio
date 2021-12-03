@@ -14,7 +14,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         protected FrequencyAnalysisPreparation<FrequencyFrameDataProvider, TSpectrumProvider> m_frequencyAnalysisPreparation;
-        protected FrequencyBandsExtraction m_frequencyBands;
+        // TODO : Support multiple BandsExtraction processors
+        // Note that this is solely to support band extraction.
+        // Precise frequence extraction should be done directly in the FrameReader
+        // Doesn't even need to be threaded...?
+        protected FrequencyBandsExtraction m_frequencyBands; 
         protected FrequencyFrameReaderProcessor m_frequencyFrameReader;
 
         public TSpectrumProvider spectrumData { get { return m_frequencyAnalysisPreparation.outputSpectrumProvider; } }

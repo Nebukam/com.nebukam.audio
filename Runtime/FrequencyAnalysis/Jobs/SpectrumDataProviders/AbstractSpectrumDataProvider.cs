@@ -22,7 +22,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected SpectrumInfos m_spectrumInfos;
         public SpectrumInfos spectrumInfos { get { return m_spectrumInfos; } }
 
-        public Bins frequencyBins { get; set; } = Bins._512;
+        public Bins frequencyBins { get; set; } = Bins.length512;
 
         protected abstract SpectrumInfos GetSpectrumInfos();
 

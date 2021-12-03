@@ -8,7 +8,7 @@ using Nebukam.Editor;
 using static Nebukam.Editor.EditorGLDrawer;
 using static Nebukam.Editor.EditorDrawer;
 
-namespace Nebukam.Audio.Editor
+namespace Nebukam.Audio.FrequencyAnalysis.Editor
 {
 
     [System.Flags]

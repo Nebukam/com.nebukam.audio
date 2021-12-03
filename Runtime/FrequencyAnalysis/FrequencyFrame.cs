@@ -7,6 +7,12 @@ using System;
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
+    public enum FrequencyExtraction
+    {
+        Bands, // Read aggregated band data
+        RawFrequency // Read frequency "bands" as defined in the FrequencyTable (as if they were custom bands)
+    }
+
     public enum OutputType
     {
         Trigger, // 0f-1f
@@ -17,11 +23,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     public enum Bands
     {
-        _8 = 8,
-        _16 = 16,
-        _32 = 32,
-        _64 = 64,
-        _128 = 128
+        band8 = 8,
+        band16 = 16,
+        band32 = 32,
+        band64 = 64,
+        band128 = 128
     }
 
     public enum Tolerance
@@ -29,7 +35,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         Loose, // Any
         Strict // All frequencies need to be accounted for
     }
-
 
     public struct Sample
     {
@@ -70,6 +75,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public struct FrequencyFrameData
     {
         public Bands bands;
+        public FrequencyExtraction extraction;
         public OutputType output;
         public Tolerance tolerance;
         public int2 frequency;
@@ -88,31 +94,28 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public const float maxAmplitude8 = 3.0f;
         public const float maxAmplitude64 = 1.0f;
 
-        [Tooltip("ID under which the data will be stored. Note that duplicate IDs will overwrite each other.")]
         public string ID = "Unidentified Sample";
 
-        [Tooltip("Band reference (8 or 64)")]
-        public Bands bands = Bands._64;
+        public FrequencyTable table;
 
-        [Tooltip("How to process the data within the frame")]
+        public Bands bands = Bands.band64;
+
         public OutputType output = OutputType.Average;
 
-        [Tooltip("How tolerant is the sampling result. Strict = all frequency must be > 0")]
+        public FrequencyExtraction extraction = FrequencyExtraction.Bands;
+
         public Tolerance tolerance = Tolerance.Loose;
 
-        [Tooltip("Horizontal start & width of the frame (limited by bands)")]
         public int2 frequency = new int2(0,1);
 
-        [Tooltip("Vertical start & height of the frame (limited by frequency)")]
+        public float2 fineFrequency = new float2(0f,1f); // Use floats for 
+
         public float2 amplitude = new float2(0f,1f);
 
-        [Tooltip("Data input scale")]
         public float inputScale = 1f;
 
-        [Tooltip("Data output scale")]
         public float outputScale = 1f;
 
-        [Tooltip("Debug Color")]
         public Color color = Color.red;
 
 #if UNITY_EDITOR

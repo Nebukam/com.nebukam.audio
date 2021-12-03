@@ -28,8 +28,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected List<FrequencyFrame> m_lockedFrames;
 
-        IFrequencyFrameDataProvider m_inputFrameDataProvider;
-        IFrequencyBandProvider m_inputBandsProvider;
+        protected IFrequencyFrameDataProvider m_inputFrameDataProvider;
+        protected IFrequencyBandProvider m_inputBandsProvider;
 
         #endregion
 

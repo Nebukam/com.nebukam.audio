@@ -13,7 +13,7 @@ using static Nebukam.Editor.EditorGLDrawer;
 using static Nebukam.Editor.EditorDrawer;
 
 
-namespace Nebukam.Audio.Editor
+namespace Nebukam.Audio.FrequencyAnalysis.Editor
 {
 
     [Flags]
@@ -78,11 +78,11 @@ namespace Nebukam.Audio.Editor
                     && NFAAnalyser.m_registeredAnalysers.Count > 0)
                     {
                         NFAAnalyser analyser = NFAAnalyser.m_registeredAnalysers[0];
-                        return analyser.analyser.freqBands64;
+                        return analyser.analyser.freqBands128;
                     }
                 }
 
-                return freqAnalyser.freqBands64;
+                return freqAnalyser.freqBands128;
             }
         }
 
