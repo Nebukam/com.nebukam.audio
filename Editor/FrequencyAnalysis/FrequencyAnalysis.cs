@@ -104,7 +104,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         public static void SetFrequencyBins(Bins bins)
         {
-            if(freqAnalyser.frequencyBins != bins)
+            if (freqAnalyser.frequencyBins != bins)
             {
                 freqAnalyser.Init(bins);
             }
@@ -171,8 +171,30 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         /// 
         /// </summary>
         /// <param name="area"></param>
+        /// <param name="table"></param>
+        internal static void DrawLines(Rect area, FrequencyTable table, Bins bins)
+        {
+            GL.Begin(GL.LINES);
+
+            int lines = (int)table.Brackets.Count;
+            float inc = area.width / lines;
+
+            for (int i = 0; i < lines; i++)
+            {
+                GLCol(Color.black, 0.8f);
+                float x = (i + 1) * inc;
+                GL.Vertex3(x, 0, 0);
+                GL.Vertex3(x, area.height, 0);
+            }
+
+        }
+
+        /// <summary>
+        /// Draw band spectrum
+        /// </summary>
+        /// <param name="area"></param>
         /// <param name="frequencies"></param>
-        internal static void DrawSpectrum(Rect area, float[] frequencies, float scale = 1f, SpectrumDrawMode draw = SpectrumDrawMode.ALL)
+        internal static void DrawBandSpectrum(Rect area, float[] frequencies, float scale = 1f, SpectrumDrawMode draw = SpectrumDrawMode.ALL)
         {
 
             int n = frequencies.Length;
@@ -224,6 +246,35 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             }
         }
 
+        internal static void DrawBracketSpectrum(Rect area, FrequencyTable table, float[] frequencies, float scale = 1f, SpectrumDrawMode draw = SpectrumDrawMode.ALL)
+        {
+
+            float x, h;
+
+            GL.Begin(GL.LINES);
+            GLCol(Color.gray, 0.25f);
+
+            float[] samples = activeAnalyser.samples;
+            int sampleCount = samples.Length;
+            float inc = area.width / sampleCount;
+
+            for (int i = 0; i < sampleCount; i++)
+            {
+                x = i * inc;
+                h = math.clamp(samples[i] * scale, 0f, 1f) * area.height;
+                GL.Vertex3(x, area.height, 0f);
+                GL.Vertex3(x, area.height-h, 0f);
+            }
+
+            GL.End();
+
+        }
+
+        internal static void DrawRawSpectrum(Rect area, float[] frequencies, float scale = 1f, SpectrumDrawMode draw = SpectrumDrawMode.ALL)
+        {
+
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -239,12 +290,13 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             GL.End();
 
             Vector2 s = new Vector2(100f, 100f);
-            
+
 
             _r = new Rect(_r.center - s * 0.5f, s);
 
             Sample sample = data.Get(frame);
-            FrameLabel labelInfos = new FrameLabel() {
+            FrameLabel labelInfos = new FrameLabel()
+            {
                 rect = _r,
                 sample = sample,
                 color = frame.color

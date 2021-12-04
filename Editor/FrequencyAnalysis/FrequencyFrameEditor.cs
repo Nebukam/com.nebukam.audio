@@ -17,7 +17,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         None = 0,
         Preview = 1,
         Identifier = 2,
-        Tolerance = 4,
+        Extraction = 4,
         BandsAndOutputType = 8,
         Scaling = 16,
         FrequencyAndAmplitude = 32,
@@ -28,6 +28,9 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
     [CanEditMultipleObjects]
     public class FrequencyFrameEditor : UnityEditor.Editor
     {
+
+        internal static Dictionary<FrequencyFrame, Dictionary<FrequencyTable, FrequencyFrameData>> m_cachedModifications
+            = new Dictionary<FrequencyFrame, Dictionary<FrequencyTable, FrequencyFrameData>>();
 
         public override bool RequiresConstantRepaint() { return true; }
 
@@ -60,8 +63,21 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                     c.a = 0.1f;
                     GLFill(c);
 
-                    FrequencyAnalysis.DrawLines(GLArea, frame.bands);
-                    FrequencyAnalysis.DrawSpectrum(GLArea, FrequencyAnalysis.activeAnalyser.GetBands(frame.bands), frame.inputScale, SpectrumDrawMode.BANDS);
+                    if (frame.extraction == FrequencyExtraction.Bands)
+                    {
+                        FrequencyAnalysis.DrawLines(GLArea, frame.bands);
+                        FrequencyAnalysis.DrawBandSpectrum(GLArea, FrequencyAnalysis.activeAnalyser.GetBandsData(frame.bands), frame.inputScale, SpectrumDrawMode.BANDS);
+                    }
+                    else if(frame.extraction == FrequencyExtraction.Bracket)
+                    {
+                        FrequencyAnalysis.DrawLines(GLArea, frame.table, Bins.length4096);
+                        FrequencyAnalysis.DrawBracketSpectrum(GLArea, frame.table, FrequencyAnalysis.activeAnalyser.GetBracketsData(frame.table), frame.inputScale, SpectrumDrawMode.BANDS);
+                    }
+                    else if(frame.extraction == FrequencyExtraction.Raw)
+                    {
+                        FrequencyAnalysis.DrawRawSpectrum(GLArea, FrequencyAnalysis.activeAnalyser.GetBandsData(frame.bands), frame.inputScale, SpectrumDrawMode.BANDS);
+                    }
+
                     FrequencyAnalysis.DrawFrame(GLArea, frame);
 
                     EndGL();
@@ -78,10 +94,22 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 __EndInLine();
             }
 
-            if (showOptions.HasFlag(FrameEditorVisibility.Tolerance))
+            if (showOptions.HasFlag(FrameEditorVisibility.Extraction))
             {
                 Space(4f);
-                changes += EnumPopup(ref frame.tolerance, "Tolerance");
+                //changes += EnumPopup(ref frame.tolerance, "Tolerance");
+
+                __BeginCol(2);
+                MiniLabel("Frequency Table");
+                if (ObjectField(ref frame.table) == 1 || frame.table == null)
+                {
+                    if (frame.table == null)
+                        frame.table = FrequencyTable.tableCommon;
+                    changes++;
+                }
+                __NextCol();
+                changes += EnumInlined(ref frame.extraction, false, "Extraction mode");
+                __EndCol();
             }
 
             if (showOptions.HasFlag(FrameEditorVisibility.BandsAndOutputType))
@@ -91,7 +119,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 if (EnumInlined(ref frame.bands, true, "Bands") == 1)
                 {
                     changes++;
-                    frame.frequency = RemapFrequencies(frame.frequency, bandsBefore, frame.bands);
+                    frame.frequenciesBand = RemapFrequencies(frame.frequenciesBand, bandsBefore, frame.bands);
                 }
 
                 __NextCol();
@@ -107,25 +135,54 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 changes += FloatFieldClamped(ref frame.inputScale, 0.001f, 1000f, "Input Scale");
                 __NextCol();
                 changes += FloatFieldClamped(ref frame.outputScale, 0.001f, 1000f, "Output Scale");
-                __EndCol();     
-                
+                __EndCol();
+
                 Space(4f);
             }
 
             if (showOptions.HasFlag(FrameEditorVisibility.FrequencyAndAmplitude))
             {
-                int nMax = (int)frame.bands;
 
-                changes += StartSizeSlider(ref frame.frequency, new int2(0, nMax), 1, "Frequencies [0 - " + nMax + "]");
-                if (frame.frequency.y < 1) { frame.frequency.y = 1; }
+                int nMax = 0;
+
+                if (frame.extraction == FrequencyExtraction.Bands)
+                {
+
+                    nMax = (int)frame.bands;
+
+                    changes += StartSizeSlider(ref frame.frequenciesBand, new int2(0, nMax), 1, "Bands [0 - " + nMax + "]");
+                    if (frame.frequenciesBand.y < 1) { frame.frequenciesBand.y = 1; }
+
+                }
+                else if (frame.extraction == FrequencyExtraction.Bracket)
+                {
+
+                    nMax = (int)frame.table.Brackets.Count-1;
+
+                    changes += StartSizeSlider(ref frame.frequenciesBracket, new int2(0, nMax), 1, "Brackets [0 - " + nMax + "]");
+                    if (frame.frequenciesBracket.y < 1) { frame.frequenciesBracket.y = 1; }
+
+                }
+                else if (frame.extraction == FrequencyExtraction.Raw)
+                {
+
+                    nMax = (int)FrequencyTable.maxHz;
+
+                    changes += StartSizeSlider(ref frame.frequenciesRaw, new int2(0, nMax), 1, "Frequencies [0 - " + nMax + "]");
+                    if (frame.frequenciesRaw.y < 1) { frame.frequenciesRaw.y = 1; }
+
+                }
 
                 Space(4f);
-
                 changes += StartSizeSlider(ref frame.amplitude, new float2(0f, 1f), "Amplitudes");
 
             }
 
-            if (changes != 0) { EditorUtility.SetDirty(frame); }
+            if (changes != 0)
+            {
+                EditorUtility.SetDirty(frame);
+                WriteCache(frame, frame.table);
+            }
 
             localHeight = Y - _YBefore;
 
@@ -148,10 +205,40 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             float w = 1f / (int)f.bands;
 
             return new Rect(
-                f.frequency.x * w * rel.width,
+                f.frequenciesBand.x * w * rel.width,
                 rel.height - ((f.amplitude.x + f.amplitude.y) * rel.height),
-                f.frequency.y * w * rel.width,
+                f.frequenciesBand.y * w * rel.width,
                 f.amplitude.y * rel.height);
+        }
+
+        internal static void WriteCache(FrequencyFrame frame, FrequencyTable table)
+        {
+            Dictionary<FrequencyTable, FrequencyFrameData> data;
+
+            if (!m_cachedModifications.TryGetValue(frame, out data))
+            {
+                data = new Dictionary<FrequencyTable, FrequencyFrameData>();
+                m_cachedModifications[frame] = data;
+            }
+
+            data[table] = frame;
+
+        }
+
+        internal static void ReadCache(FrequencyFrame frame, FrequencyTable table)
+        {
+            Dictionary<FrequencyTable, FrequencyFrameData> data;
+            FrequencyFrameData frameData;
+
+            if (!m_cachedModifications.TryGetValue(frame, out data)
+                || !data.TryGetValue(table, out frameData))
+            {
+                WriteCache(frame, table);
+                return;
+            }
+
+            frame.Copy(frameData);
+
         }
 
         internal static int map(int s, int oMin, int oMax, int nMin, int nMax)

@@ -1,4 +1,5 @@
 ﻿using Nebukam.JobAssist;
+using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
@@ -13,7 +14,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
 
-        protected NativeArray<Sample> m_outputSamples = new NativeArray<Sample>(50, Allocator.Persistent);
+        protected NativeArray<Sample> m_outputFrameSamples = new NativeArray<Sample>(50, Allocator.Persistent);
 
         protected FrameDataDictionary m_inputFrameDataDictionary;
         public FrameDataDictionary inputFrameDataDictionary
@@ -57,13 +58,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             m_lockedFrames = m_inputFrameDataProvider.lockedFrames;
             int frameCount = m_lockedFrames.Count;
 
-            //TODO : Resize m_sample array only if greater than frame count
-
-            if (frameCount > m_outputSamples.Length)
-            {
-                m_outputSamples.Dispose();
-                m_outputSamples = new NativeArray<Sample>(frameCount * 2, Allocator.Persistent);
-            }
+            EnsureMinLength(ref m_outputFrameSamples, frameCount, frameCount);
 
             job.m_inputBand8 = m_inputBandsProvider.outputBand8;
             job.m_inputBand16 = m_inputBandsProvider.outputBand16;
@@ -71,7 +66,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             job.m_inputBand64 = m_inputBandsProvider.outputBand64;
             job.m_inputBand128 = m_inputBandsProvider.outputBand128;
 
-            job.m_outputSamples = m_outputSamples;
+            job.m_outputFrameSamples = m_outputFrameSamples;
 
             return frameCount;
 
@@ -83,7 +78,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             int frameCount = m_lockedFrames.Count;
             for (int i = 0; i < frameCount; i++)
-                m_inputFrameDataDictionary.Set(m_lockedFrames[i], m_outputSamples[i]);
+                m_inputFrameDataDictionary.Set(m_lockedFrames[i], m_outputFrameSamples[i]);
         }
 
         protected override void Dispose(bool disposing)
@@ -91,7 +86,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             base.Dispose(disposing);
             if (!disposing) { return; }
 
-            m_outputSamples.Dispose();
+            m_outputFrameSamples.Dispose();
         }
 
     }

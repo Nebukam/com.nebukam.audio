@@ -30,31 +30,24 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FrequencyFrameReaderJob : IJobParallelFor
+    public struct SingleFrequencyBandExtractionJob : IJob
     {
 
-        [ReadOnly]
-        public NativeArray<float> m_inputBand8;
-        [ReadOnly]
-        public NativeArray<float> m_inputBand16;
-        [ReadOnly]
-        public NativeArray<float> m_inputBand32;
-        [ReadOnly]
-        public NativeArray<float> m_inputBand64;
-        [ReadOnly]
-        public NativeArray<float> m_inputBand128;
-        [ReadOnly]
-        public NativeList<FrequencyFrameData> m_inputFrameData;
+        public bool m_recompute;
 
-        public NativeArray<Sample> m_outputFrameSamples;
+        [ReadOnly]
+        public NativeArray<float> m_inputSpectrum;
+        [ReadOnly]
+        internal NativeArray<BandInfos> m_inputBandInfos;
 
-        public void Execute(int index)
+        public NativeArray<float> m_outputBands;
+
+        public void Execute()
         {
 
-            FrequencyFrameData frame = m_inputFrameData[index];
-            Sample sample = new Sample();
+            if (!m_recompute) { return; }
 
-            m_outputFrameSamples[index] = sample;
+
 
         }
 

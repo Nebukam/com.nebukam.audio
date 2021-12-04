@@ -18,21 +18,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected SingleFrequencyBandExtraction m_bandProcessor64;
         protected SingleFrequencyBandExtraction m_bandProcessor128;
 
-        protected FrequencyTable m_frequencyTable = null;
-        public FrequencyTable frequencyTable
-        {
-            get { return m_frequencyTable; }
-            set
-            {
-                m_frequencyTable = value;
-                m_bandProcessor8.frequencyTable = m_frequencyTable;
-                m_bandProcessor16.frequencyTable = m_frequencyTable;
-                m_bandProcessor32.frequencyTable = m_frequencyTable;
-                m_bandProcessor64.frequencyTable = m_frequencyTable;
-                m_bandProcessor128.frequencyTable = m_frequencyTable;
-            }
-        }
-
         public FrequencyBandsExtraction()
         {
             Add(ref m_bandProcessor8);

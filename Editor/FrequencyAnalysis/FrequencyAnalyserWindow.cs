@@ -236,7 +236,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 GLFill(c);
 
                 if (bands != null)
-                    FrequencyAnalysis.DrawSpectrum(GLArea, bands);
+                    FrequencyAnalysis.DrawBandSpectrum(GLArea, bands);
 
                 if (frames != null)
                 {

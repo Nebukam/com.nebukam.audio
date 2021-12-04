@@ -9,7 +9,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public class SingleFrequencyBandExtraction : Processor<SingleFrequencyBandJob>
+    public class SingleFrequencyBandExtraction : Processor<SingleFrequencyBandExtractionJob>
     {
 
         protected Bands m_referenceBand = Bands.band8;
@@ -19,30 +19,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
             set { m_referenceBand = value; }
         }
 
-        protected FrequencyTable m_frequencyTable = null;
-        public FrequencyTable frequencyTable
-        {
-            get { return m_frequencyTable; }
-            set{ m_frequencyTable = value; }
-        }
-
         #region Inputs
 
         protected bool m_inputsDirty = true;
 
-        protected ISpectrumDataProvider m_inputSpectrumDataProvider;
+        protected IFrequencyTableProvider m_frequencyTableProvider;
+        protected ISpectrumProvider m_inputSpectrumProvider;
         protected IFrequencyBandProvider m_inputBandsProvider;
 
         #endregion
 
-        protected override void Prepare(ref SingleFrequencyBandJob job, float delta)
+        protected override void Prepare(ref SingleFrequencyBandExtractionJob job, float delta)
         {
 
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_inputBandsProvider)
-                    || !TryGetFirstInGroup(out m_inputSpectrumDataProvider))
+                if (!TryGetFirstInGroup(out m_frequencyTableProvider)
+                    || !TryGetFirstInGroup(out m_inputBandsProvider)
+                    || !TryGetFirstInGroup(out m_inputSpectrumProvider))
                 {
                     throw new System.Exception("Missing providers");
                 }
@@ -51,7 +46,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            job.m_inputSpectrum = m_inputSpectrumDataProvider.outputSpectrum;
+            job.m_inputSpectrum = m_inputSpectrumProvider.outputSpectrum;
 
             switch (m_referenceBand)
             {
@@ -72,7 +67,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                     break;
             }
 
-            job.m_inputBandInfos = FrequencyRanges.GetNativeBandInfos(m_referenceBand);
+            m_frequencyTableProvider.frequencyTable.GetBandInfos(out job.m_inputBandInfos, m_referenceBand);
 
         }
 
@@ -80,7 +75,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void InternalUnlock() { }
 
-        protected override void Apply(ref SingleFrequencyBandJob job){ }
+        protected override void Apply(ref SingleFrequencyBandExtractionJob job){ }
 
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEditor;
 using Unity.Mathematics;
 using Unity.Burst;
 using Unity.Jobs;
@@ -30,11 +31,17 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public float normalizedCoverage;
         public float linearCoverageEnd;
 
-        public int width256;
-        public int width512;
-        public int width1024;
-        public int width2048;
-        public int width4096;
+        public int start256;
+        public int start512;
+        public int start1024;
+        public int start2048;
+        public int start4096;
+
+        public int length256;
+        public int length512;
+        public int length1024;
+        public int length2048;
+        public int length4096;
 
         public FrequencyRange(int hz)
         {
@@ -44,31 +51,56 @@ namespace Nebukam.Audio.FrequencyAnalysis
             normalizedCoverage = 0f;
             linearCoverageEnd = 0f;
 
-            width256 = 0;
-            width512 = 0;
-            width1024 = 0;
-            width2048 = 0;
-            width4096 = 0;
+            start256 = 0;
+            start512 = 0;
+            start1024 = 0;
+            start2048 = 0;
+            start4096 = 0;
+
+            length256 = 0;
+            length512 = 0;
+            length1024 = 0;
+            length2048 = 0;
+            length4096 = 0;
 
         }
 
-        public int Width(Bins bins)
+        public int Start(Bins bins)
         {
-            if (bins == Bins.length256) return width256;
-            if (bins == Bins.length512) return width512;
-            if (bins == Bins.length1024) return width1024;
-            if (bins == Bins.length2048) return width2048;
-            if (bins == Bins.length4096) return width4096;
+            if (bins == Bins.length256) return start256;
+            if (bins == Bins.length512) return start512;
+            if (bins == Bins.length1024) return start1024;
+            if (bins == Bins.length2048) return start2048;
+            if (bins == Bins.length4096) return start4096;
             return 0;
         }
 
-        public void Width(Bins bins, int length)
+        public void Start(Bins bins, int length)
         {
-            if (bins == Bins.length256) { width256 = length; }
-            if (bins == Bins.length512) { width512 = length; }
-            if (bins == Bins.length1024) { width1024 = length; }
-            if (bins == Bins.length2048) { width2048 = length; }
-            if (bins == Bins.length4096) { width4096 = length; }
+            if (bins == Bins.length256) { start256 = length; }
+            if (bins == Bins.length512) { start512 = length; }
+            if (bins == Bins.length1024) { start1024 = length; }
+            if (bins == Bins.length2048) { start2048 = length; }
+            if (bins == Bins.length4096) { start4096 = length; }
+        }
+
+        public int Length(Bins bins)
+        {
+            if (bins == Bins.length256) return length256;
+            if (bins == Bins.length512) return length512;
+            if (bins == Bins.length1024) return length1024;
+            if (bins == Bins.length2048) return length2048;
+            if (bins == Bins.length4096) return length4096;
+            return 0;
+        }
+
+        public void Length(Bins bins, int length)
+        {
+            if (bins == Bins.length256) { length256 = length; }
+            if (bins == Bins.length512) { length512 = length; }
+            if (bins == Bins.length1024) { length1024 = length; }
+            if (bins == Bins.length2048) { length2048 = length; }
+            if (bins == Bins.length4096) { length4096 = length; }
         }
 
     }
@@ -84,7 +116,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public int length1024;
         public int length2048;
         public int length4096;
-        
+
         public int Length(Bins bins)
         {
             if (bins == Bins.length256) return length256;
@@ -141,28 +173,74 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     }
 
+    public struct FrequencyTableData
+    {
+        int start;
+        int end;
+        int count;
+    }
+
     [ExecuteAlways]
     [System.Serializable]
     [CreateAssetMenu(fileName = "Frequency Table", menuName = "N:Toolkit/Audio/Frequency Table", order = 0)]
     public class FrequencyTable : ScriptableObject
     {
 
+        #region Preset tables
+
+        internal static FrequencyTable m_tableFull = null;
+        public static FrequencyTable tableFull
+        {
+            get
+            {
+                if (m_tableFull == null)
+                    m_tableFull = Resources.Load<FrequencyTable>("FrequencyTables/NAudio - FrequencyTable - Full");
+
+                return m_tableFull;
+            }
+        }
+
+        internal static FrequencyTable m_tableCommon = null;
+        public static FrequencyTable tableCommon
+        {
+            get
+            {
+                if (m_tableCommon == null)
+                    m_tableCommon = Resources.Load<FrequencyTable>("FrequencyTables/NAudio - FrequencyTable - Common");
+
+                return m_tableCommon;
+            }
+        }
+
+        #endregion
+
+        #region Static
+
+        internal static bool m_staticInit = false;
+
+        internal static List<FrequencyTable> loadedFrequencyTableList;
+        internal int m_staticIndex = -1;
+
+        internal static NativeList<FrequencyTableData> globalFrequencyTableDataList;
+        internal static NativeList<FrequencyRange> globalFrequencyRangeInline;
+
+        internal static Array __bandTypes = Enum.GetValues(typeof(Bands));
+        internal static Array __binsTypes = Enum.GetValues(typeof(Bins));
+
         internal static int m_maxHz = 20000;
+        public static int maxHz { get { return m_maxHz; } }
+
+        #endregion
 
         public bool UseRawDistribution = false;
 
-        public List<int> FrequencyBrackets;
+        public List<int> Brackets;
 
         protected FrequencyRange[] m_ranges;
         protected BandInfosPair[] m_bandInfos;
 
-        private void Awake()
-        {
-            BuildTable();
-        }
-
-        internal static Array __bandTypes = Enum.GetValues(typeof(Bands));
-        internal static Array __binsTypes = Enum.GetValues(typeof(Bins));
+        public int Count { get { return m_ranges.Length; } }
+        public FrequencyRange[] ranges { get { return m_ranges; } }
 
         public BandInfosPair GetBandInfosPair(Bands bands)
         {
@@ -184,10 +262,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             int numRanges = 1;
 
-            if (FrequencyBrackets != null)
+            if (Brackets != null)
             {
-                numRanges = FrequencyBrackets.Count + 1;
-                FrequencyBrackets.Sort();
+                numRanges = Brackets.Count + 1;
+                Brackets.Sort();
             }
 
             // Initialize range data
@@ -202,7 +280,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             {
 
                 o = m_ranges[i];
-                o.Hz = i == numRanges - 1 ? m_maxHz : FrequencyBrackets[i];
+                o.Hz = i == numRanges - 1 ? m_maxHz : Brackets[i];
 
                 if (i != 0)
                     o.width = o.Hz - po.Hz;
@@ -211,6 +289,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
                 o.normalizedCoverage = (float)o.width / (float)m_maxHz;
                 o.linearCoverageEnd = (float)(i + 1) / (float)numRanges;
+
+                foreach (Bins bin in __binsTypes)
+                {
+                    o.Start(bin, math.clamp(po.Start(bin) + po.Length(bin), 0, (int)bin - 1));
+                    o.Length(bin, (int)((float)o.normalizedCoverage * (float)(int)bin));
+                }
+
                 m_ranges[i] = o;
                 po = o;
 
@@ -249,10 +334,100 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         private void OnDestroy()
         {
+            Cleanup();
+        }
+
+        private void Cleanup()
+        {
             for (int i = 0; i < m_bandInfos.Length; i++)
                 m_bandInfos[i].Dispose();
         }
 
+        #region Static registry
+
+        internal static void InitStaticRegistry()
+        {
+
+            if (m_staticInit) { return; }
+            m_staticInit = true;
+
+            loadedFrequencyTableList = new List<FrequencyTable>();
+            globalFrequencyTableDataList = new NativeList<FrequencyTableData>(100, Allocator.Persistent);
+            globalFrequencyRangeInline = new NativeList<FrequencyRange>(100, Allocator.Persistent);
+
+        }
+
+        internal static void CleanupStaticRegistry()
+        {
+
+            if (!m_staticInit) { return; }
+            m_staticInit = false;
+
+            globalFrequencyTableDataList.Dispose();
+            globalFrequencyRangeInline.Dispose();
+            loadedFrequencyTableList.Clear();
+            loadedFrequencyTableList = null;
+
+        }
+
+        void OnEnable()
+        {
+#if UNITY_EDITOR
+            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
+#endif
+            BuildTable();
+            InitStaticRegistry();
+
+            if (!loadedFrequencyTableList.Contains(this))
+            {
+                loadedFrequencyTableList.Add(this);
+                m_staticIndex = loadedFrequencyTableList.Count - 1;
+            }
+
+        }
+
+        void OnDisable()
+        {
+#if UNITY_EDITOR
+            AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
+#endif
+            Cleanup();
+
+            if (loadedFrequencyTableList != null)
+            {
+                int index = loadedFrequencyTableList.IndexOf(this);
+                if (index != -1)
+                {
+                    m_staticIndex = -1;
+                    loadedFrequencyTableList.RemoveAt(index);
+
+                    for (int i = 0; i < loadedFrequencyTableList.Count; i++)
+                        loadedFrequencyTableList[i].m_staticIndex = i;
+
+                }
+            }
+
+        }
+
+
+#if UNITY_EDITOR
+
+        public void OnBeforeAssemblyReload()
+        {
+            Cleanup();
+            CleanupStaticRegistry();
+        }
+
+        public void OnAfterAssemblyReload()
+        {
+
+        }
+
+#endif
+
+        #endregion
 
     }
 
@@ -266,8 +441,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_nativeCollectionsInitialized = false;
         protected NativeArray<BandInfos> m_nativeBandInfos;
-        public NativeArray<BandInfos> nativeBandInfos { 
-            get {
+        public NativeArray<BandInfos> nativeBandInfos
+        {
+            get
+            {
 
                 if (!m_nativeCollectionsInitialized)
                 {
@@ -276,7 +453,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                     Copy(ref m_bandInfos, ref m_nativeBandInfos);
                 }
 
-                return m_nativeBandInfos; 
+                return m_nativeBandInfos;
             }
         }
 
@@ -292,14 +469,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
             return m_binsPeakIterations[Array.IndexOf(FrequencyTable.__binsTypes, bins)];
         }
 
-        
+
 
         public void InitializeNativeCollections()
         {
 
         }
 
-        internal void Initialize(FrequencyRange[] ranges, bool useRawDistribution = false)
+        internal void Initialize(FrequencyRange[] inputRanges, bool useRawDistribution = false)
         {
 
             m_bandInfos = new BandInfos[(int)bands];
@@ -308,7 +485,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             int
                 numBands = (int)bands,
-                numRanges = ranges.Length;
+                numRanges = inputRanges.Length;
 
             float
                 maxHz = FrequencyTable.m_maxHz;
@@ -334,7 +511,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             float
                 bandWidth = 1f / numBands, // The normalized size of a single band
                 currentCoverage = 0f,
-                currentRangeLength = ranges[0].linearCoverageEnd,
+                currentRangeLength = inputRanges[0].linearCoverageEnd,
                 rangeProgress = 0f;
 
             int
@@ -360,18 +537,18 @@ namespace Nebukam.Audio.FrequencyAnalysis
                         rangeIndex = 0;
 
                     FrequencyRange
-                        currentRange = ranges[rangeIndex];
+                        currentRange = inputRanges[rangeIndex];
 
                     for (rangeIndex = 0; rangeIndex < numRanges; rangeIndex++)
                     {
-                        currentRange = ranges[rangeIndex];
+                        currentRange = inputRanges[rangeIndex];
                         if (currentCoverage < currentRange.linearCoverageEnd)
                             break;
                     }
 
                     if (rangeIndex != lastRange) // Start a new range
                     {
-                        currentRangeLength = currentRange.linearCoverageEnd - ranges[rangeIndex - 1].linearCoverageEnd;
+                        currentRangeLength = currentRange.linearCoverageEnd - inputRanges[rangeIndex - 1].linearCoverageEnd;
                         rangeProgress = 0f;
                     }
 
@@ -454,9 +631,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
         internal void Dispose()
         {
             m_bandInfos = null;
-            if(m_nativeCollectionsInitialized)
+            if (m_nativeCollectionsInitialized)
                 m_nativeBandInfos.Dispose();
         }
 
     }
+
 }

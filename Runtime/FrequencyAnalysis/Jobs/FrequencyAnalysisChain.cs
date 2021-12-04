@@ -10,7 +10,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     [BurstCompile]
     public class FrequencyAnalysisChain<TSpectrumProvider> : ProcessorChain
-        where TSpectrumProvider : ISpectrumDataProvider, new()
+        where TSpectrumProvider : ISpectrumProvider, new()
     {
 
         protected FrequencyAnalysisPreparation<FrequencyFrameDataProvider, TSpectrumProvider> m_frequencyAnalysisPreparation;
@@ -21,7 +21,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected FrequencyBandsExtraction m_frequencyBands; 
         protected FrequencyFrameReaderProcessor m_frequencyFrameReader;
 
-        public TSpectrumProvider spectrumData { get { return m_frequencyAnalysisPreparation.outputSpectrumProvider; } }
+        public TSpectrumProvider spectrumData { get { return m_frequencyAnalysisPreparation.outputSpectrum; } }
 
         protected FrameDataDictionary m_frameDataDictionary;
         public FrameDataDictionary frameDataDictionary

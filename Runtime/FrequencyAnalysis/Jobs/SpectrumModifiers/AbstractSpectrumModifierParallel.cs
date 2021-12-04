@@ -1,0 +1,51 @@
+﻿using Nebukam.JobAssist;
+using static Nebukam.JobAssist.CollectionsUtils;
+using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Burst;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Nebukam.Audio.FrequencyAnalysis
+{
+
+    [BurstCompile]
+    public abstract class AbstractSpectrumModifierParallel<T> : ParallelProcessor<T>, ISpectrumModifier
+        where T : struct, Unity.Jobs.IJobParallelFor, ISpectrumModifierJob
+    {
+
+        #region Inputs
+
+        protected bool m_inputsDirty = true;
+
+        protected ISpectrumProvider m_inputSpectrumProvider;
+
+        #endregion
+
+        protected override void InternalLock() { }
+
+        protected override int Prepare(ref T job, float delta)
+        {
+
+            if (m_inputsDirty)
+            {
+
+                if (!TryGetFirstInGroup(out m_inputSpectrumProvider))
+                {
+                    throw new System.Exception("ISpectrumProvider missing");
+                }
+
+                m_inputsDirty = false;
+
+            }
+
+            return 0;
+
+        }
+
+        protected override void InternalUnlock() { }
+
+        protected override void Apply(ref T job) { }
+
+    }
+}

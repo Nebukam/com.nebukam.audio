@@ -30,7 +30,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         private void OnEnable()
         {
 
-            m_freqTableIntsSerialized = serializedObject.FindProperty("FrequencyBrackets");
+            m_freqTableIntsSerialized = serializedObject.FindProperty("Brackets");
 
             UpdateList();
 
@@ -64,13 +64,25 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
             if (Button("Rebuild Table")) { m_table.BuildTable(); }
 
-            m_table.UseRawDistribution = EditorGUI.Toggle(__GetRect(), m_table.UseRawDistribution);
+            //m_table.UseRawDistribution = EditorGUI.Toggle(__GetRect(), m_table.UseRawDistribution);
 
             DrawPreview();
 
-            
+            bool lockedTable = false;
+
+            if(m_table == FrequencyTable.tableCommon 
+                || m_table == FrequencyTable.tableFull)
+            {
+                lockedTable = true;
+
+                HelpBox("This is a default FrequencyTable.\nIf you need to modify it consider creating your own instead.", MessageType.Warning, 32f, 10f);
+            }
+
+            EditorGUI.BeginDisabledGroup(lockedTable);
 
             m_listDrawer.DoLayoutList();
+
+            EditorGUI.EndDisabledGroup();
 
             __RequireRectUpdate(true);
 
@@ -86,9 +98,9 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             if (isActive)
                 activeIndex = index;
 
-            int prevHz = index == 0 ? 0 : m_table.FrequencyBrackets[index - 1];
-            int currentHz = m_table.FrequencyBrackets[index];
-            int nextHz = index == m_table.FrequencyBrackets.Count - 1 ? currentHz + 1 : m_table.FrequencyBrackets[index + 1];
+            int prevHz = index == 0 ? 0 : m_table.Brackets[index - 1];
+            int currentHz = m_table.Brackets[index];
+            int nextHz = index == m_table.Brackets.Count - 1 ? currentHz + 1 : m_table.Brackets[index + 1];
             int limit = 24000;
 
             Rect r = new Rect(rect.x, rect.y + 4f, rect.width - 10f, EditorGUIUtility.singleLineHeight);
@@ -120,7 +132,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 if (currentHz > limit - 1)
                     currentHz = limit - 1;
 
-                m_table.FrequencyBrackets[index] = currentHz;
+                m_table.Brackets[index] = currentHz;
                 EditorUtility.SetDirty(target);
 
             }
@@ -131,12 +143,12 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 __NextInline(30f);
                 if (Button("Fix"))
                 {
-                    m_table.FrequencyBrackets.Sort();
+                    m_table.Brackets.Sort();
                 }
                 __EndInLine();
             }
 
-            if (index == m_table.FrequencyBrackets.Count - 1)
+            if (index == m_table.Brackets.Count - 1)
             {
                 Space(6f);
                 Label("" + limit);
@@ -146,6 +158,9 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         protected void DrawPreview()
         {
+
+            float binSize = (float)FrequencyTable.maxHz / (float)(int)m_previewBins;
+            float bandSize = (float)FrequencyTable.maxHz / (float)(int)m_previewBands;
 
             if (BeginGL(200f))
             {
@@ -162,20 +177,23 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                     max = m_table.GetBandInfosPair(m_previewBands).GetPeak(m_previewBins);
 
                 Rect quad = new Rect();
-                quad.width = width -1;
+                quad.width = width -2;
 
                 Color bad = Color.red;
                 bad.a = 0.25f;
 
-                GL.Begin(GL.QUADS);
+                BandInfos infos;
                 
                 for (int i = 0; i < bandInfos.Length; i++)
                 {
-                    float a = bandInfos[i].Length(m_previewBins);
+                    infos = bandInfos[i];
+                    float a = infos.Length(m_previewBins);
                     float b = max;// (int)m_previewBins;
                     float nrm = (a / b);
 
-                    if(a == 0f)
+                    GL.Begin(GL.QUADS);
+
+                    if (a == 0f)
                     {
                         GL.Color(bad);
                         nrm = 1f;
@@ -191,12 +209,16 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
                     quad.x = i * width + 1;
                     quad.height = height * nrm;
+                    quad.width = width-2;
                     quad.y = height - quad.height;
 
+                    
                     GLRect(quad);
+                    GL.End();
+
                 }
 
-                GL.End();
+                
 
                 EndGL();
             }
@@ -207,17 +229,21 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             EnumInlined(ref m_previewBins, true, "Preview bins");
             __EndCol();
 
+            string str = "Individual bin size : "+binSize+"Hz\nIndividual band size : "+bandSize+"Hz";
+
+            Space(4f);
+            HelpBox(str, MessageType.None, 30f);
         }
 
         void OnListItemAdded(ReorderableList list)
         {
-            if(m_table.FrequencyBrackets == null)
-                m_table.FrequencyBrackets = new List<int>();
+            if(m_table.Brackets == null)
+                m_table.Brackets = new List<int>();
             
-            if (m_table.FrequencyBrackets.Count == 0)
-                m_table.FrequencyBrackets.Add(16);
+            if (m_table.Brackets.Count == 0)
+                m_table.Brackets.Add(16);
             else
-                m_table.FrequencyBrackets.Add(m_table.FrequencyBrackets[m_table.FrequencyBrackets.Count - 1] + 10);
+                m_table.Brackets.Add(m_table.Brackets[m_table.Brackets.Count - 1] + 10);
 
             EditorUtility.SetDirty(target);
 
@@ -225,8 +251,13 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         float OnListElementHeight(int index)
         {
-            float baseSize = index == 0 || index == m_table.FrequencyBrackets.Count - 1
+            float baseSize = index == 0 || index == m_table.Brackets.Count - 1
                 ? EditorGUIUtility.singleLineHeight * 2f + 8f : EditorGUIUtility.singleLineHeight;
+
+            if(m_table.Brackets.Count == 1)
+            {
+                baseSize += 20f;
+            }
 
             return baseSize + 6f;
         }

@@ -73,17 +73,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         };
 
-        private static NativeArray<BandInfos> m_nativeBands8 = new NativeArray<BandInfos>(8, Allocator.Persistent);
-        private static NativeArray<BandInfos> m_nativeBands16 = new NativeArray<BandInfos>(16, Allocator.Persistent);
-        private static NativeArray<BandInfos> m_nativeBands32 = new NativeArray<BandInfos>(32, Allocator.Persistent);
-        private static NativeArray<BandInfos> m_nativeBands64 = new NativeArray<BandInfos>(64, Allocator.Persistent);
-        private static NativeArray<BandInfos> m_nativeBands128 = new NativeArray<BandInfos>(128, Allocator.Persistent);
-
-        private static BandInfos[] m_bands8 = RemapBands(new BandInfos[8], m_nativeBands8);
-        private static BandInfos[] m_bands16 = RemapBands(new BandInfos[16], m_nativeBands16);
-        private static BandInfos[] m_bands32 = RemapBands(new BandInfos[32], m_nativeBands32);
-        private static BandInfos[] m_bands64 = RemapBands(new BandInfos[64], m_nativeBands64);
-        private static BandInfos[] m_bands128 = RemapBands(new BandInfos[128], m_nativeBands128);
+        private static BandInfos[] m_bands8 = RemapBands(new BandInfos[8]);
+        private static BandInfos[] m_bands16 = RemapBands(new BandInfos[16]);
+        private static BandInfos[] m_bands32 = RemapBands(new BandInfos[32]);
+        private static BandInfos[] m_bands64 = RemapBands(new BandInfos[64]);
+        private static BandInfos[] m_bands128 = RemapBands(new BandInfos[128]);
 
         private static bool m_init = false;
 
@@ -151,21 +145,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             return GetBandInfos((int)band);
         }
 
-        internal static NativeArray<BandInfos> GetNativeBandInfos(int band)
-        {
-            if (band == 8) return m_nativeBands8;
-            if (band == 16) return m_nativeBands16;
-            if (band == 32) return m_nativeBands32;
-            if (band == 64) return m_nativeBands64;
-            return m_nativeBands128;
-        }
-
-        internal static NativeArray<BandInfos> GetNativeBandInfos(Bands band)
-        {
-            return GetNativeBandInfos((int)band);
-        }
-
-        internal static BandInfos[] RemapBands(BandInfos[] bands, NativeArray<BandInfos> nativeBands)
+        internal static BandInfos[] RemapBands(BandInfos[] bands)
         {
 
             Init();

@@ -10,8 +10,6 @@ using Unity.Burst;
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    
-
     public struct SamplingInfos
     {
 
@@ -98,12 +96,41 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public uint pointCount { get { return m_pointCount; } }
 
+        public float[] samples { get { return m_samples; } }
+
+        protected List<FrequencyTable> m_tables = new List<FrequencyTable>();
+        protected List<float[]> m_tablesData = new List<float[]>();
+
+        public int AddTable(FrequencyTable table)
+        {
+
+            int index = m_tables.IndexOf(table);
+
+            if (index >= 0) { return index; }
+
+            m_tables.Add(table);
+            m_tablesData.Add(new float[table.Count]);            
+
+            return m_tables.Count - 1;
+
+        }
+
+        public void RemoveTable(FrequencyTable table)
+        {
+            int index = m_tables.IndexOf(table);
+
+            if (index == -1) { return; }
+
+            m_tables.RemoveAt(index);
+            m_tablesData.RemoveAt(index);
+        }
+
         /// <summary>
         /// Return the float sample array matching selected bands
         /// </summary>
         /// <param name="bands"></param>
         /// <returns></returns>
-        public float[] GetBands(Bands bands)
+        public float[] GetBandsData(Bands bands)
         {
             if (bands == Bands.band8) return m_freqBands8;
             if (bands == Bands.band16) return m_freqBands16;
@@ -111,6 +138,21 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (bands == Bands.band64) return m_freqBands64;
             if (bands == Bands.band128) return m_freqBands128;
             return m_freqBands128;
+        }
+
+        public float[] GetBracketsData(FrequencyTable table)
+        {
+            int index = m_tables.IndexOf(table);
+
+            if (index == -1)
+                index = AddTable(table);
+
+            return m_tablesData[index];
+        }
+
+        public float[] GetRawData()
+        {
+            return m_samples;
         }
 
         public FFT m_FFT = new FFT();
@@ -243,7 +285,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         }
         */
 
-        protected void UpdateFrequencyBands()
+        protected void UpdateFrequenciesData()
         {
 
             // 22050 / 512 = 43hz per sample
@@ -261,12 +303,41 @@ namespace Nebukam.Audio.FrequencyAnalysis
             UpdateFrequencyBand(m_freqBands64);
             UpdateFrequencyBand(m_freqBands128);
 
+            for (int i = 0; i < m_tables.Count; i++)
+                UpdateFrequencyTable(m_tables[i], m_tablesData[i]);
+
+        }
+
+        protected void UpdateFrequencyTable(FrequencyTable table, float[] freqTable)
+        {
+
+            FrequencyRange[] ranges = table.ranges;
+
+            for (int b = 0; b < ranges.Length; b++)
+            {
+
+                float freqSum = 0f;
+                FrequencyRange range = ranges[b];
+                int start = range.Start(m_frequencyBins);
+                int width = range.Length(m_frequencyBins);
+                int end = start + width;
+
+                for (int i = start; i < end; i++)
+                {
+                    freqSum += m_samples[i];
+                }
+
+                freqSum /= width;
+                freqTable[b] = freqSum;
+
+            }
+
         }
 
         protected void UpdateFrequencyBand(float[] freqBands)
         {
 
-            int 
+            int
                 bandCount = freqBands.Length,
                 index = 0;
 
@@ -283,7 +354,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 }
 
                 average /= index;
-                freqBands[i] = average * m_scale;
+                freqBands[i] = average;
             }
 
         }
@@ -319,16 +390,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
                     for (int i = 0; i < m_samples.Length; i++)
                     {
                         if (m_sampleBuffer[i] > m_samples[i])
-                            m_samples[i] = m_sampleBuffer[i];
+                            m_samples[i] = m_sampleBuffer[i] * m_scale;
                         else
-                            m_samples[i] = lerp(m_samples[i], m_sampleBuffer[i], time * m_smoothDownRate);
+                            m_samples[i] = lerp(m_samples[i], m_sampleBuffer[i] * m_scale, time * m_smoothDownRate);
                     }
                 }
                 else
                 {
                     for (int i = 0; i < m_samples.Length; i++)
                     {
-                        m_samples[i] = m_sampleBuffer[i];
+                        m_samples[i] = m_sampleBuffer[i] * m_scale;
                     }
                 }
 
@@ -336,7 +407,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             //UpdateFreqBands8();
             //UpdateFreqBands64();
-            UpdateFrequencyBands();
+            UpdateFrequenciesData();
 
         }
 
@@ -346,13 +417,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <param name="time"></param>
         public void AnalyseAt(AudioClip clip, float time)
         {
-            
+
             ReadCombinedSpectrumData(clip, time);
 
             for (int i = 0; i < m_samples.Length; i++)
-                m_samples[i] = m_sampleBuffer[i];
+                m_samples[i] = m_sampleBuffer[i] * m_scale;
 
-            UpdateFrequencyBands();
+            UpdateFrequenciesData();
 
         }
 
@@ -376,24 +447,69 @@ namespace Nebukam.Audio.FrequencyAnalysis
             float inputScale = frame.inputScale;
             float bandValue, bandValueRemapped;
 
-            float[] bands = GetBands(frame.bands);
-
-            int sampleWidth = math.max(1, frame.frequency.y);
-            int seekLength = clamp(frame.frequency.x + sampleWidth, 0, bands.Length);
+            int sampleWidth = 0;
             int reached = 0;
 
-
-            for (int i = frame.frequency.x; i < seekLength; i++)
+            if (frame.extraction == FrequencyExtraction.Bands)
             {
-                bandValue = bands[i] * inputScale;
 
-                if (bandValue >= ampBegin) { reached++; }
+                float[] bands = GetBandsData(frame.bands);
 
-                bandValue = clamp(bandValue, ampBegin, ampEnd);
-                bandValueRemapped = map(bandValue, ampBegin, ampEnd, 0f, 1f);
-                peak = max(peak, bandValueRemapped);
+                sampleWidth = math.max(1, frame.frequenciesBand.y);
+                int seekLength = clamp(frame.frequenciesBand.x + sampleWidth, 0, bands.Length);
+                reached = 0;
 
-                sum += bandValueRemapped;
+
+                for (int i = frame.frequenciesBand.x; i < seekLength; i++)
+                {
+                    bandValue = bands[i] * inputScale;
+
+                    if (bandValue >= ampBegin) { reached++; }
+
+                    bandValue = clamp(bandValue, ampBegin, ampEnd);
+                    bandValueRemapped = map(bandValue, ampBegin, ampEnd, 0f, 1f);
+                    peak = max(peak, bandValueRemapped);
+
+                    sum += bandValueRemapped;
+                }
+
+            }
+            else if(frame.extraction == FrequencyExtraction.Bracket)
+            {
+
+                FrequencyRange[] ranges = frame.table.ranges;
+
+                int start = frame.frequenciesBracket.x;
+                int end = math.clamp(frame.frequenciesBracket.x + frame.frequenciesBracket.y, 0, ranges.Length);
+                reached = 0;
+                sampleWidth = 0;
+
+                for (int b = start; b < end; b++)
+                {
+
+                    FrequencyRange range = ranges[b];
+                    int fstart = range.Start(m_frequencyBins);
+                    int width = range.Length(m_frequencyBins);
+                    int fend = start + width;
+
+                    sampleWidth += width;
+
+                    for (int i = fstart; i < fend; i++)
+                    {
+                        bandValue = m_samples[i] * inputScale;
+
+                        if (bandValue >= ampBegin) { reached++; }
+
+                        bandValue = clamp(bandValue, ampBegin, ampEnd);
+                        bandValueRemapped = map(bandValue, ampBegin, ampEnd, 0f, 1f);
+                        peak = max(peak, bandValueRemapped);
+
+                        sum += bandValueRemapped;
+
+                    }
+
+                }
+
             }
 
             float _average = sum / sampleWidth;
@@ -476,7 +592,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             spectrum.EnsureCoverage(ref m_multiChannelSamples);
 
             int offsetSamples = spectrum.TimeIndex(time);
-            if(m_multiChannelSamples.Length + offsetSamples >= clip.samples) { return spectrum; }
+            if (m_multiChannelSamples.Length + offsetSamples >= clip.samples) { return spectrum; }
 
             clip.GetData(m_multiChannelSamples, offsetSamples);
 
@@ -525,9 +641,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
             clip.GetData(m_multiChannelSamples, spectrum.TimeIndex(time));
 
             int index = 0;
-            for (int i = 0; i < m_multiChannelSamples.Length; i+= spectrum.numChannels)
+            for (int i = 0; i < m_multiChannelSamples.Length; i += spectrum.numChannels)
             {
-                m_fwdSpectrumChunks[index] = m_multiChannelSamples[i+chan] * m_fwdWindowCoefs[index];
+                m_fwdSpectrumChunks[index] = m_multiChannelSamples[i + chan] * m_fwdWindowCoefs[index];
                 index++;
             }
 
@@ -546,7 +662,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         internal void EnsureSize(ref float[] array, int size)
         {
-            if(array.Length != size) { array = new float[size]; }
+            if (array.Length != size) { array = new float[size]; }
         }
 
         internal float map(float s, float a1, float a2, float b1, float b2)

@@ -1,5 +1,6 @@
 ﻿using Unity.Mathematics;
 using static Unity.Mathematics.math;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -10,7 +11,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public enum FrequencyExtraction
     {
         Bands, // Read aggregated band data
-        RawFrequency // Read frequency "bands" as defined in the FrequencyTable (as if they were custom bands)
+        Bracket, // Read frequency "bands" as defined in the FrequencyTable (as if they were custom bands)
+        Raw // Read raw frequency
     }
 
     public enum OutputType
@@ -78,7 +80,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public FrequencyExtraction extraction;
         public OutputType output;
         public Tolerance tolerance;
-        public int2 frequency;
+        public int2 frequenciesBand;
+        public int2 frequenciesBracket;
+        public int2 frequenciesRaw;
         public float2 amplitude;
         public float inputScale;
         public float outputScale;
@@ -106,11 +110,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public Tolerance tolerance = Tolerance.Loose;
 
-        public int2 frequency = new int2(0,1);
+        public int2 frequenciesBand = new int2(0, 1);
 
-        public float2 fineFrequency = new float2(0f,1f); // Use floats for 
+        public int2 frequenciesBracket = new int2(0, 1);
 
-        public float2 amplitude = new float2(0f,1f);
+        public int2 frequenciesRaw = new int2(0, 1);
+
+        public float2 amplitude = new float2(0f, 1f);
 
         public float inputScale = 1f;
 
@@ -125,9 +131,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         public void Validate()
         {
-            frequency = new int2(
-                clamp(frequency.x, 0, 63),
-                clamp(frequency.y, 0, 63));
+            frequenciesBand = new int2(
+                clamp(frequenciesBand.x, 0, 63),
+                clamp(frequenciesBand.y, 0, 63));
 
             amplitude = new float2(
                 clamp(amplitude.x, 0f, 10f),
@@ -145,23 +151,31 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             bands = data.bands;
             output = data.output;
+            extraction = data.extraction;
             tolerance = data.tolerance;
-            frequency = data.frequency;
+            frequenciesBand = data.frequenciesBand;
+            frequenciesBracket = data.frequenciesBracket;
+            frequenciesRaw = data.frequenciesRaw;
             amplitude = data.amplitude;
             inputScale = data.inputScale;
             outputScale = data.outputScale;
         }
-        
-        public static implicit operator FrequencyFrameData(FrequencyFrame value) {
-            return new FrequencyFrameData() {
+
+        public static implicit operator FrequencyFrameData(FrequencyFrame value)
+        {
+            return new FrequencyFrameData()
+            {
                 bands = value.bands,
                 output = value.output,
+                extraction = value.extraction,
                 tolerance = value.tolerance,
-                frequency = value.frequency,
+                frequenciesBand = value.frequenciesBand,
+                frequenciesBracket = value.frequenciesBracket,
+                frequenciesRaw = value.frequenciesRaw,
                 amplitude = value.amplitude,
                 inputScale = value.inputScale,
                 outputScale = value.outputScale
-            }; 
+            };
         }
 
     }
