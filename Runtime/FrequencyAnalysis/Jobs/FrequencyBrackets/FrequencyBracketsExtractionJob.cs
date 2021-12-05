@@ -7,10 +7,10 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public struct FrequencyBracketsExtractionJob : Unity.Jobs.IJob
+    public struct FrequencyBracketsExtractionJob : Unity.Jobs.IJobParallelFor
     {
 
-        public void Execute()
+        public void Execute(int index)
         {
 
         }

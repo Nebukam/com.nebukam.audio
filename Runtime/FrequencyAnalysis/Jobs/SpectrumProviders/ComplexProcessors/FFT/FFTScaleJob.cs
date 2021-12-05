@@ -29,9 +29,19 @@ using UnityEngine;
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public interface IComplexJob
+    [BurstCompile]
+    public struct FFTScaleJob : IJobParallelFor
     {
-        public NativeArray<ComplexFloat> outputComplexFloats { set; }
-    }
 
+        [ReadOnly]
+        public NativeArray<float> m_inputCoefficients;
+
+        public NativeArray<float> m_outputSamples;
+
+        public void Execute(int index)
+        {
+            m_outputSamples[index] = m_outputSamples[index] * m_inputCoefficients[index];
+        }
+
+    }
 }

@@ -67,7 +67,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_inputFrequencyFrameDataProvider))
+                if (!TryGetFirstInCompound(out m_inputFrequencyFrameDataProvider))
                 {
                     throw new System.Exception("IFrequencyFrameDataProvider missing");
                 }
@@ -92,11 +92,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void Apply(ref Unemployed job) { }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
-            if (!disposing) { return; }
-
             m_outputFrequencyRanges.Dispose();
         }
 

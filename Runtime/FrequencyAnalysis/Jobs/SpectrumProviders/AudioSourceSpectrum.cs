@@ -9,28 +9,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public class AudioSourceSpectrum : AbstractSpectrumProvider<Unemployed>, ISpectrumProvider
+    public class AudioSourceSpectrum : AbstractSpectrumProvider<Unemployed>
     {
-
-        public int channel { get; set; } = 0;
 
         protected AudioSource m_audioSource = null;
         public AudioSource audioSource
         {
             get { return m_audioSource; }
             set { m_audioSource = value; }
-        }
-
-        protected FFTWindow m_FFTWindowType = FFTWindow.Hanning;
-        public FFTWindow FFTWindowType
-        {
-            get { return m_FFTWindowType; }
-            set { m_FFTWindowType = value; }
-        }
-
-        protected override SpectrumInfos GetSpectrumInfos()
-        {
-            return new SpectrumInfos(frequencyBins, m_audioSource.clip);
         }
 
         protected override void FetchSpectrumData()
@@ -41,15 +27,15 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void Prepare(ref Unemployed job, float delta)
         {
 
+#if UNITY_EDITOR
+
             if (m_audioSource == null)
-            {
                 throw new System.Exception("AudioSource is null");
-            }
 
             if (m_audioSource.clip == null)
-            {
                 throw new System.Exception("AudioSource has no clip set");
-            }
+
+#endif
 
             base.Prepare(ref job, delta);
 

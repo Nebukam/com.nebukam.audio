@@ -88,8 +88,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public float outputScale;
     }
 
-
-
     [System.Serializable]
     [CreateAssetMenu(fileName = "Frequency Frame", menuName = "N:Toolkit/Audio/Frequency Frame", order = 1)]
     public class FrequencyFrame : ScriptableObject

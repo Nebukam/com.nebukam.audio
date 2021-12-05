@@ -27,7 +27,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_inputsDirty = true;
 
-        protected internal ISamplesProvider m_channelSamplesProvider;
+        protected internal ISamplesProvider m_samplesProvider;
 
         #endregion
 
@@ -39,28 +39,27 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_channelSamplesProvider))
+                if (!TryGetFirstInCompound(out m_samplesProvider))
                 {
-                    throw new System.Exception("IChannelSamplesProvider missing");
+                    throw new System.Exception("ISamplesProvider missing");
                 }
 
                 m_inputsDirty = false;
 
             }
 
-            int spectrumLength = (int)m_channelSamplesProvider.spectrumInfos.frequencyBins;
+            int spectrumLength = (int)m_samplesProvider.frequencyBins;
 
             MakeLength(ref m_outputComplexFloats, spectrumLength);
 
-            job.complexFloats = m_outputComplexFloats;
+            job.outputComplexFloats = m_outputComplexFloats;
 
         }
 
         protected override void InternalUnlock() { }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
             m_outputComplexFloats.Dispose();
         }
 
@@ -89,7 +88,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_inputSpectrumProvider))
+                if (!TryGetFirstInCompound(out m_inputSpectrumProvider))
                 {
                     throw new System.Exception("ISpectrumProvider missing");
                 }
@@ -98,10 +97,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            int spectrumLength = (int)m_inputSpectrumProvider.outputSpectrum.frequencyBins;
+            int spectrumLength = (int)m_inputSpectrumProvider.frequencyBins;
 
             MakeLength(ref m_complexFloats, spectrumLength);
-            job.complexFloats = m_complexFloats;
+            job.outputComplexFloats = m_complexFloats;
 
             return spectrumLength;
         }
@@ -110,9 +109,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void Apply(ref T job) { }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
             m_complexFloats.Dispose();
         }
 

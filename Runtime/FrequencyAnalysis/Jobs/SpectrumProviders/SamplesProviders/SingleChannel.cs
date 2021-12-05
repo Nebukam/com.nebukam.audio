@@ -9,12 +9,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public class SingleChannel : AbstractSamplesProvider<SingleChannelExtractionJob>
+    public class SingleChannel : AbstractSamplesProvider<SingleChannelJob>, ISamplesProvider
     {
 
         public int channel { get; set; } = 0;
 
-        protected override int Prepare(ref SingleChannelExtractionJob job, float delta)
+        protected override int Prepare(ref SingleChannelJob job, float delta)
         {
             int result = base.Prepare(ref job, delta);
             job.channel = channel;

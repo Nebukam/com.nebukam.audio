@@ -16,7 +16,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class CombineChannels : AbstractSamplesProvider<CombineChannelsJob>, ISamplesProvider
     {
 
-        protected NativeArray<int> m_nativeChannels = new NativeArray<int>(0, Allocator.Persistent);
+        protected NativeArray<int> m_inputChannels = new NativeArray<int>(0, Allocator.Persistent);
 
         protected int[] m_channels = new int[0];
         public int[] channels
@@ -35,17 +35,17 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             int result = base.Prepare(ref job, delta);
 
-            Copy(ref m_channels, ref m_nativeChannels);
-            job.channels = m_nativeChannels;
+            Copy(ref m_channels, ref m_inputChannels);
+            job.m_inputChannels = m_inputChannels;
 
             return result;
 
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
-            m_nativeChannels.Dispose();
+            base.InternalDispose();
+            m_inputChannels.Dispose();
         }
 
     }

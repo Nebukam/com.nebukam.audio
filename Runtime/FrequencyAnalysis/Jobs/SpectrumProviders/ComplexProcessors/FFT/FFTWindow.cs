@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public enum FFTWindowType
+    public enum FFTWindow
     {
         None,
         Rectangular,

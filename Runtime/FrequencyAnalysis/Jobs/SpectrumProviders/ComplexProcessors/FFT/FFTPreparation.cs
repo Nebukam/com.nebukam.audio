@@ -25,10 +25,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Inputs
 
-        protected bool m_inputsDirty = true;
-
-        ISamplesProvider m_inputChannelSamplesProvider;
-        FFTCoefficients m_inputFFTCoefficients;
+        ISamplesProvider m_inputSamplesProvider;
 
         #endregion
 
@@ -38,21 +35,19 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_inputChannelSamplesProvider, true)
-                    || !TryGetFirstInGroup(out m_inputFFTCoefficients, true))
+                if (!TryGetFirstInCompound(out m_inputSamplesProvider, true))
                 {
-                    throw new System.Exception("IChannelSamplesProvider missing.");
+                    throw new System.Exception("ISamplesProvider missing.");
                 }
-
-                m_inputsDirty = false;
 
             }
 
-            int channelDataLength = m_inputChannelSamplesProvider.spectrumInfos.pointCount;
+            int pointCount = m_inputSamplesProvider.outputMultiChannelSamples.Length;
 
-            MakeLength(ref m_outputComplexFloatsFull, channelDataLength);
-            MakeLength(ref m_outputFFTElements, channelDataLength);
+            MakeLength(ref m_outputComplexFloatsFull, pointCount);
+            MakeLength(ref m_outputFFTElements, pointCount);
 
+            job.m_inputComplexFloats = m_outputComplexFloatsFull;
             job.m_outputFFTElements = m_outputFFTElements;
 
             base.Prepare(ref job, delta);
@@ -64,9 +59,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
             m_outputFFTLogN = job.m_outputFFTLogN;
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
+            base.InternalDispose();
             m_outputComplexFloatsFull.Dispose();
             m_outputFFTElements.Dispose();
         }

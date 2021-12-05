@@ -37,6 +37,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             if (m_lockedFrames.Count != m_frames.Count)
                 m_lockedFrames.Capacity = m_frames.Count;
+
         }
 
         protected override void Prepare(ref Unemployed job, float delta)
@@ -62,11 +63,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void Apply(ref Unemployed job) { }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
-            if (!disposing) { return; }
-
             m_outputFrameDataList.Dispose();
         }
 

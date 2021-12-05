@@ -16,8 +16,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Inputs
 
-        protected bool m_inputsDirty = true;
-
         protected internal ISamplesProvider m_inputChannelSamplesProvider;
         protected internal FFTPreparation m_inputFFTPreparation = null;
 
@@ -29,21 +27,22 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_inputChannelSamplesProvider, true)
-                    || !TryGetFirstInGroup(out m_inputFFTPreparation, true))
+                if (!TryGetFirstInCompound(out m_inputChannelSamplesProvider, true)
+                    || !TryGetFirstInCompound(out m_inputFFTPreparation, true))
                 {
                     throw new System.Exception("IChannelSamplesProvider or FFTPreparation missing.");
                 }
-
-                m_inputsDirty = false;
 
             }
 
             base.Prepare(ref job, delta);
 
-            job.m_complexFloatsFull = m_inputFFTPreparation.outputComplexFloatsFull;
-            job.m_FFTElements = m_inputFFTPreparation.outputFFTElements;
-            job.FFTLogN = m_inputFFTPreparation.outputFFTLogN;
+
+            job.outputComplexFloats = m_inputFFTPreparation.outputComplexFloats;
+            job.m_inputComplexFloatsFull = m_inputFFTPreparation.outputComplexFloatsFull;
+            job.m_inputFFTElements = m_inputFFTPreparation.outputFFTElements;
+            job.m_inputSamples = m_inputChannelSamplesProvider.outputSamples;
+            job.m_FFTLogN = m_inputFFTPreparation.outputFFTLogN;
 
         }
 
@@ -52,9 +51,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
             
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
+            base.InternalDispose();
             m_fullLengthFloats.Dispose();
         }
 

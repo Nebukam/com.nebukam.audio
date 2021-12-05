@@ -34,8 +34,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         [ReadOnly]
-        public NativeArray<ComplexFloat> m_complexFloats;
-        public NativeArray<ComplexFloat> complexFloats { set { m_complexFloats = value; } }
+        public NativeArray<ComplexFloat> m_inputComplexFloats;
+        public NativeArray<ComplexFloat> outputComplexFloats { set { m_inputComplexFloats = value; } }
 
         public NativeArray<FFTElement> m_outputFFTElements;
 

@@ -29,10 +29,10 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
     public static class FrequencyAnalysis
     {
 
-        public static FrequencyAnalyser freqAnalyser;
+        public static FrequencyAnalyserSync freqAnalyser;
         public static FrameDataDictionary data;
 
-        public static FrequencyAnalyser activeAnalyser
+        public static FrequencyAnalyserSync activeAnalyser
         {
             get
             {
@@ -88,7 +88,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         static FrequencyAnalysis()
         {
-            freqAnalyser = new FrequencyAnalyser();
+            freqAnalyser = new FrequencyAnalyserSync();
             data = new FrameDataDictionary();
         }
 

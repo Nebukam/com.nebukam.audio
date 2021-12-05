@@ -38,11 +38,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void InternalUnlock() { }
         protected override void Apply(ref Unemployed job) { }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
-            if (!disposing) { return; }
-
             m_outputBand8.Dispose();
             m_outputBand16.Dispose();
             m_outputBand32.Dispose();

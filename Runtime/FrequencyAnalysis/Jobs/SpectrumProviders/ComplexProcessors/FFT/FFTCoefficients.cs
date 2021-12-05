@@ -15,14 +15,15 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_recompute = true;
 
-        protected FFTWindowType m_FFTType = FFTWindowType.BlackmanHarris;
-        public FFTWindowType FFTType
+        protected Nebukam.Audio.FrequencyAnalysis.FFTWindow m_window =
+            Nebukam.Audio.FrequencyAnalysis.FFTWindow.BlackmanHarris;
+        public Nebukam.Audio.FrequencyAnalysis.FFTWindow window
         {
-            get { return m_FFTType; }
+            get { return m_window; }
             set
             {
-                if (m_FFTType == value) { return; }
-                m_FFTType = value;
+                if (m_window == value) { return; }
+                m_window = value;
                 m_recompute = true;
             }
         }
@@ -37,7 +38,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_inputsDirty = true;
 
-        ISamplesProvider m_inputChannelSamplesProvider;
+        ISamplesProvider m_inputSamplesProvider;
 
         #endregion
 
@@ -49,19 +50,20 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_inputChannelSamplesProvider))
+                if (!TryGetFirstInCompound(out m_inputSamplesProvider))
                 {
-                    throw new System.Exception("IChannelSamplesProvider missing.");
+                    throw new System.Exception("ISamplesProvider missing.");
                 }
 
                 m_inputsDirty = false;
 
             }
 
-            int bins = (int)m_inputChannelSamplesProvider.spectrumInfos.frequencyBins;
+            m_recompute = !MakeLength(ref m_outputCoefficients, (int)m_inputSamplesProvider.frequencyBins);
 
-            m_recompute = !MakeLength(ref m_outputCoefficients, bins);
-
+            job.m_windowType = m_window;
+            job.m_recompute = m_recompute;
+            job.m_outputCoefficients = m_outputCoefficients;
             job.m_recompute = m_recompute;
 
             m_recompute = false;
@@ -75,9 +77,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             m_outputScaleFactor = job.m_scaleFactor;
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
             m_outputCoefficients.Dispose();
         }
 

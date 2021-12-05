@@ -30,7 +30,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_inputSpectrumProvider))
+                if (!TryGetFirstInCompound(out m_inputSpectrumProvider))
                 {
                     throw new System.Exception("ISpectrumProvider missing");
                 }
@@ -39,7 +39,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            return 0;
+            return m_inputSpectrumProvider.outputSpectrum.Length;
 
         }
 

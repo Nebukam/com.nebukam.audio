@@ -180,6 +180,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
         int count;
     }
 
+    public struct BracketData
+    {
+        public float peak;
+        public float average;
+        public int width;
+        public int reached;
+    }
+
     [ExecuteAlways]
     [System.Serializable]
     [CreateAssetMenu(fileName = "Frequency Table", menuName = "N:Toolkit/Audio/Frequency Table", order = 0)]

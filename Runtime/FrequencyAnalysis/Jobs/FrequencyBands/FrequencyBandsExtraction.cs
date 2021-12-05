@@ -27,5 +27,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
             Add(ref m_bandProcessor128);
         }
 
+        protected override void InternalLock() { }
+
+        protected override void Prepare(float delta) { }
+
+        protected override void Apply() { }
+
+        protected override void InternalUnlock() { }
+
     }
 }

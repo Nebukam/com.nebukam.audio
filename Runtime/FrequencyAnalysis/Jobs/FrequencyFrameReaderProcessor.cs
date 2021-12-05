@@ -45,8 +45,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_inputFrameDataProvider, true)
-                    || !TryGetFirstInGroup(out m_inputBandsProvider, true))
+                if (!TryGetFirstInCompound(out m_inputFrameDataProvider, true)
+                    || !TryGetFirstInCompound(out m_inputBandsProvider, true))
                 {
                     throw new System.Exception("FrameData and/or Band provider missing");
                 }
@@ -81,11 +81,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 m_inputFrameDataDictionary.Set(m_lockedFrames[i], m_outputFrameSamples[i]);
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
-            if (!disposing) { return; }
-
             m_outputFrameSamples.Dispose();
         }
 

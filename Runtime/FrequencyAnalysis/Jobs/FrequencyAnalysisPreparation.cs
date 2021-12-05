@@ -9,22 +9,22 @@ namespace Nebukam.Audio.FrequencyAnalysis
     /// <summary>
     /// Minimum required elements & jobs to kickstart frequency analysis
     /// </summary>
-    /// <typeparam name="TFrameDataProvider"></typeparam>
-    /// <typeparam name="TSpectrumData"></typeparam>
+    /// <typeparam name="T_FRAME_PROVIDER"></typeparam>
+    /// <typeparam name="T_SPECTRUM_PROVIDER"></typeparam>
     [BurstCompile]
-    public class FrequencyAnalysisPreparation<TFrameDataProvider, TSpectrumData> : ProcessorGroup, ISpectrumProvider, IFrequencyTableProvider, IFrequencyBandProvider, IFrequencyFrameDataProvider
-        where TFrameDataProvider : IFrequencyFrameDataProvider, new()
-        where TSpectrumData : ISpectrumProvider, new()
+    public class FrequencyAnalysisPreparation<T_FRAME_PROVIDER, T_SPECTRUM_PROVIDER> : ProcessorGroup, ISpectrumProvider, IFrequencyTableProvider, IFrequencyBandProvider, IFrequencyFrameDataProvider
+        where T_FRAME_PROVIDER : class, IFrequencyFrameDataProvider, new()
+        where T_SPECTRUM_PROVIDER : class, ISpectrumProvider, new()
     {
 
-        protected TFrameDataProvider m_frequencyFrameDataProvider;
-        public TFrameDataProvider frequencyFrameDataProvider { get { return m_frequencyFrameDataProvider; } }
+        protected T_FRAME_PROVIDER m_frequencyFrameDataProvider;
+        public T_FRAME_PROVIDER frequencyFrameDataProvider { get { return m_frequencyFrameDataProvider; } }
 
         protected FrequencyTableDataProvider m_frequencyTableDataProvider;
         public IFrequencyTableProvider frequencyTableDataProvider { get { return m_frequencyTableDataProvider; } }
 
-        protected TSpectrumData m_baseSpectrum;
-        public TSpectrumData baseSpectrum { get { return m_baseSpectrum; } }
+        protected T_SPECTRUM_PROVIDER m_spectrumProvider;
+        public T_SPECTRUM_PROVIDER spectrumProvider { get { return m_spectrumProvider; } }
 
         protected FrequencyBandsProvider m_frequencyBandsProvider;
         public IFrequencyBandProvider frequencyBandsProvider { get { return m_frequencyBandsProvider; } }
@@ -53,13 +53,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public Bins frequencyBins
         {
-            get { return m_baseSpectrum.frequencyBins; }
-            set { m_baseSpectrum.frequencyBins = value; }
+            get { return m_spectrumProvider.frequencyBins; }
+            set { m_spectrumProvider.frequencyBins = value; }
         }
 
-        public SpectrumInfos spectrumInfos { get { return m_baseSpectrum.spectrumInfos; } }
-
-        public NativeArray<float> outputSpectrum { get { return m_baseSpectrum.outputSpectrum; } }
+        public NativeArray<float> outputSpectrum { get { return m_spectrumProvider.outputSpectrum; } }
 
         #endregion
 
@@ -77,9 +75,18 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             Add(ref m_frequencyFrameDataProvider); // Provide data for analysis
             Add(ref m_frequencyTableDataProvider); // Provide table definition for framing analysis
-            Add(ref m_baseSpectrum); // Provide base spectrum arrays to work with
+            Add(ref m_spectrumProvider); // Provide base spectrum arrays to work with
             Add(ref m_frequencyBandsProvider); // Provide base band arrays for post processor -- this is uneed
         }
+
+        protected override void InternalLock() { }
+
+        protected override void Prepare(float delta) { }
+
+        protected override void Apply() { }
+
+        protected override void InternalUnlock() { }
+
 
 
     }

@@ -7,19 +7,8 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-
-    [BurstCompile]
-    public class SpectrumDataPostProcessor : ProcessorGroup
+    public class SpectrumModifierChain : ProcessorGroup
     {
-
-        protected FrequencyBandsProcessor m_frequencyBandsExtraction;
-        protected FrequencyBracketsProcessor m_frequencyBracketsExtraction;
-
-        public SpectrumDataPostProcessor()
-        {
-            Add(ref m_frequencyBandsExtraction);
-            Add(ref m_frequencyBracketsExtraction);
-        }
 
         protected override void InternalLock() { }
 

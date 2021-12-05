@@ -27,7 +27,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         public Color highlightColor = Color.yellow;
 
         public AudioSource source = null;
-        private FrequencyAnalyser analyzer;
+        private FrequencyAnalyserSync analyzer;
 
         [Header("Analyzer settings")]
         public int bins = 512;
@@ -47,7 +47,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             frameDataDict = new FrameDataDictionary();
             frameDataDict.Add(FrameList);
 
-            analyzer = new FrequencyAnalyser();
+            analyzer = new FrequencyAnalyserSync();
         }
 
         // Update is called once per frame

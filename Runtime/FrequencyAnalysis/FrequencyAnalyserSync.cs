@@ -36,7 +36,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             return time;
         }
 
-        public SamplingInfos(FrequencyAnalyser analyser, AudioClip clip)
+        public SamplingInfos(FrequencyAnalyserSync analyser, AudioClip clip)
         {
             numSamples = clip.samples;
             duration = clip.length;
@@ -49,14 +49,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
     }
 
     [BurstCompile]
-    public class FrequencyAnalyser
+    public class FrequencyAnalyserSync
     {
 
         #region data
 
         protected Bins m_frequencyBins = Bins.length512;
         protected uint m_pointCount = 1024;
-        protected FFTWindow m_windowType = FFTWindow.BlackmanHarris;
+        protected UnityEngine.FFTWindow m_windowType = UnityEngine.FFTWindow.BlackmanHarris;
 
         protected float[] m_samples;
         protected float[] m_sampleBuffer;
@@ -76,7 +76,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public Bins frequencyBins { get { return m_frequencyBins; } }
 
-        public FFTWindow windowType
+        public UnityEngine.FFTWindow windowType
         {
             get { return m_windowType; }
             set { m_windowType = value; }
@@ -185,12 +185,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #endregion
 
-        public FrequencyAnalyser(Bins bins = Bins.length512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
+        public FrequencyAnalyserSync(Bins bins = Bins.length512, UnityEngine.FFTWindow FFTW = UnityEngine.FFTWindow.BlackmanHarris)
         {
             Init(bins, FFTW);
         }
 
-        public void Init(Bins bins = Bins.length512, FFTWindow FFTW = FFTWindow.BlackmanHarris)
+        public void Init(Bins bins = Bins.length512, UnityEngine.FFTWindow FFTW = UnityEngine.FFTWindow.BlackmanHarris)
         {
 
             m_frequencyBins = bins;

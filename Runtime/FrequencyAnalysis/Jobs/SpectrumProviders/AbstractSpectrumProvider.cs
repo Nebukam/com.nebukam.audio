@@ -12,7 +12,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public interface ISpectrumProvider : IProcessor
     {
         Bins frequencyBins { get; set; }
-        SpectrumInfos spectrumInfos { get; }
         NativeArray<float> outputSpectrum { get; }
     }
 
@@ -22,21 +21,18 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         protected float[] m_rawSpectrum;
-
         protected NativeArray<float> m_outputSpectrum = new NativeArray<float>(0, Allocator.Persistent);
         public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
 
-        protected SpectrumInfos m_spectrumInfos;
-        public SpectrumInfos spectrumInfos { get { return m_spectrumInfos; } }
+        public int channel { get; set; } = 0;
 
         public Bins frequencyBins { get; set; } = Bins.length512;
 
-        protected abstract SpectrumInfos GetSpectrumInfos();
-
-        protected virtual void PrepareRawSpectrum()
+        protected UnityEngine.FFTWindow m_FFTWindowType = UnityEngine.FFTWindow.Hanning;
+        public UnityEngine.FFTWindow FFTWindowType
         {
-            if (m_rawSpectrum == null || m_rawSpectrum.Length != m_spectrumInfos.pointCount)
-                m_rawSpectrum = new float[m_spectrumInfos.pointCount];
+            get { return m_FFTWindowType; }
+            set { m_FFTWindowType = value; }
         }
 
         protected abstract void FetchSpectrumData();
@@ -44,27 +40,18 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void Prepare(ref T job, float delta)
         {
 
-            m_spectrumInfos = GetSpectrumInfos();
+            if (m_rawSpectrum == null 
+                || m_rawSpectrum.Length != (int)frequencyBins)
+                m_rawSpectrum = new float[(int)frequencyBins];
 
-            int points = m_spectrumInfos.pointCount;
-
-            if ((points != 0) && ((points & (points - 1)) == 0))
-            {
-                throw new System.Exception("number of points (" + points + ") is not power of two.");
-            }
-
-            PrepareRawSpectrum();
             FetchSpectrumData();
 
             Copy(ref m_rawSpectrum, ref m_outputSpectrum);
 
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void InternalDispose()
         {
-            base.Dispose(disposing);
-            if (!disposing) { return; }
-
             m_outputSpectrum.Dispose();
         }
 

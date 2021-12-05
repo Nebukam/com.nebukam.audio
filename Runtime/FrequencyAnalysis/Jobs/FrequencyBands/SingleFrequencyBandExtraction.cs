@@ -35,9 +35,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInGroup(out m_frequencyTableProvider)
-                    || !TryGetFirstInGroup(out m_inputBandsProvider)
-                    || !TryGetFirstInGroup(out m_inputSpectrumProvider))
+                if (!TryGetFirstInCompound(out m_frequencyTableProvider)
+                    || !TryGetFirstInCompound(out m_inputBandsProvider)
+                    || !TryGetFirstInCompound(out m_inputSpectrumProvider))
                 {
                     throw new System.Exception("Missing providers");
                 }
@@ -76,6 +76,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void InternalUnlock() { }
 
         protected override void Apply(ref SingleFrequencyBandExtractionJob job){ }
+
+        protected override void InternalDispose() { }
 
     }
 }

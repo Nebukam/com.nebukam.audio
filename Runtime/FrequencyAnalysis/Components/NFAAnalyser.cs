@@ -16,8 +16,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public AudioSource Source;
 
-        protected FrequencyAnalyser m_analyser;
-        public FrequencyAnalyser analyser { get { return m_analyser; } }
+        protected FrequencyAnalyserSync m_analyser;
+        public FrequencyAnalyserSync analyser { get { return m_analyser; } }
 
         public float TimeOffset = 0f;
         public float Scale = 1f;
@@ -27,7 +27,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         private void Awake()
         {
-            m_analyser = new FrequencyAnalyser();
+            m_analyser = new FrequencyAnalyserSync();
             m_dataDictionary = new FrameDataDictionary();
         }
 

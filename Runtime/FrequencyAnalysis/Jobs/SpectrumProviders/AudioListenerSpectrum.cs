@@ -12,28 +12,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class AudioListenerSpectrum : AbstractSpectrumProvider<Unemployed>
     {
 
-        public int channel { get; set; } = 0;
-
-        protected FFTWindow m_FFTWindowType = FFTWindow.Hanning;
-        public FFTWindow FFTWindowType
-        {
-            get { return m_FFTWindowType; }
-            set { m_FFTWindowType = value; }
-        }
-
-        protected override SpectrumInfos GetSpectrumInfos()
-        {
-            SpectrumInfos sinfos = new SpectrumInfos();
-            sinfos.frequencyBins = frequencyBins;
-            sinfos.frequency = AudioSettings.outputSampleRate; 
-            sinfos.numSamples = 0;
-            sinfos.numChannels = 1;
-            sinfos.pointCount = (int)frequencyBins * 2;
-            sinfos.coverage = sinfos.pointCount; // We only extract a single channel of data with GetSpectrumData
-            sinfos.sampleFrequency = sinfos.frequency / (int)sinfos.frequencyBins;
-            return sinfos;
-        }
-
         protected override void FetchSpectrumData()
         {
             AudioListener.GetSpectrumData(m_rawSpectrum, channel, m_FFTWindowType);
