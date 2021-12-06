@@ -13,12 +13,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         protected FrequencyBandsProcessor m_frequencyBandsExtraction;
+        public FrequencyBandsProcessor bandsExtraction { get { return m_frequencyBandsExtraction; } }
+
         protected FrequencyBracketsProcessor m_frequencyBracketsExtraction;
+        public FrequencyBracketsProcessor bracketsExtraction { get { return m_frequencyBracketsExtraction; } }
 
         public SpectrumDataPostProcessor()
         {
             Add(ref m_frequencyBandsExtraction);
             Add(ref m_frequencyBracketsExtraction);
+            m_frequencyBracketsExtraction.chunkSize = 1;
         }
 
         protected override void InternalLock() { }

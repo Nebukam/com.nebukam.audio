@@ -8,6 +8,7 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
+    [BurstCompile]
     public struct SmoothSpectrumJob : IJobParallelFor, ISpectrumModifierJob
     {
 

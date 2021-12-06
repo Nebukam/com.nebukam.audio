@@ -26,6 +26,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using UnityEngine;
+using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -35,8 +36,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         [ReadOnly]
+        public NativeArray<float> m_params;
+
         public NativeArray<ComplexFloat> m_outputComplexFloats;
-        public NativeArray<ComplexFloat> outputComplexFloats { set { m_outputComplexFloats = value; } }
+        public NativeArray<ComplexFloat> complexFloats { set { m_outputComplexFloats = value; } }
 
         public NativeArray<ComplexFloat> m_inputComplexFloatsFull;
 
@@ -44,91 +47,85 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public NativeArray<float> m_inputSamples;
 
-        public uint m_FFTLogN;
-
         public void Execute()
         {
 
-            int pointCount = m_inputFFTElements.Length;
-            uint uPointCount = (uint)pointCount;
+            int
+                FFTLogN = (int)m_params[FFTParams.LOG_N],
+                pointCount = m_inputFFTElements.Length,
+                numFlies = pointCount >> 1,
+                span = (int)numFlies,
+                spacing = pointCount,
+                wIndexStep = 1;
 
-            float FFTScale = math.sqrt(2) / (float)pointCount; // Natural FFT Scale Factor
-
-            float TAU_INV = -2.0f * PI;
-            uint numFlies = uPointCount >> 1;  // Number of butterflies per sub-FFT
-            int span = (int)numFlies;      // Width of the butterfly
-            int spacing = pointCount;        // Distance between start of sub-FFTs
-            uint wIndexStep = 1;               // Increment for twiddle table index
+            float
+                FFTScale = sqrt(2) / (float)pointCount, // Natural FFT Scale Factor
+                TAU_INV = -2.0f * PI;
 
             // Copy data into linked complex number objects
             FFTElement x = m_inputFFTElements[0];
-            int k = 0;
-            for (uint i = 0; i < pointCount; i++)
+            for (int i = 0; i < pointCount; i++)
             {
-                x.re = m_inputSamples[k];
+                x.re = m_inputSamples[i];
                 x.im = 0.0f;
-                x = m_inputFFTElements[x.next];
-                k++;
+
+                m_inputFFTElements[x.index] = x;
+
+                if (x.next != -1)
+                    x = m_inputFFTElements[x.next];
+
             }
 
-            // For each stage of the FFT
-            for (int stage = 0; stage < m_FFTLogN; stage++)
+            for (int stage = 0; stage < FFTLogN; stage++)
             {
-                // Compute a multiplier factor for the "twiddle factors".
-                // The twiddle factors are complex unit vectors spaced at
-                // regular angular intervals. The angle by which the twiddle
-                // factor advances depends on the FFT stage. In many FFT
-                // implementations the twiddle factors are cached, but because
-                // array lookup is relatively slow in C#, it's just
-                // as fast to compute them on the fly.
-                float wAngleInc = wIndexStep * TAU_INV / (uPointCount);
-                float wMulRe = cos(wAngleInc);
-                float wMulIm = sin(wAngleInc);
+
+                float 
+                    wAngleInc = wIndexStep * TAU_INV / (float)pointCount,
+                    wMulRe = cos(wAngleInc),
+                    wMulIm = sin(wAngleInc);
 
                 for (int start = 0; start < pointCount; start += spacing)
                 {
 
-                    FFTElement xTop = m_inputFFTElements[start];
-                    FFTElement xBot = m_inputFFTElements[start + span];
+                    FFTElement 
+                        xTop = m_inputFFTElements[start],
+                        xBot = m_inputFFTElements[start + span];
 
-                    float wRe = 1.0f;
-                    float wIm = 0.0f;
+                    float 
+                        wRe = 1.0f,
+                        wIm = 0.0f;
 
-                    // For each butterfly in this stage
-                    for (uint flyCount = 0; flyCount < numFlies; ++flyCount)
+                    for (int flyCount = 0; flyCount < numFlies; flyCount++)
                     {
-                        // Get the top & bottom values
-                        float xTopRe = xTop.re;
-                        float xTopIm = xTop.im;
-                        float xBotRe = xBot.re;
-                        float xBotIm = xBot.im;
 
-                        // Top branch of butterfly has addition
+                        float 
+                            xTopRe = xTop.re,
+                            xTopIm = xTop.im,
+                            xBotRe = xBot.re,
+                            xBotIm = xBot.im,
+                            tRe;
+
                         xTop.re = xTopRe + xBotRe;
                         xTop.im = xTopIm + xBotIm;
 
-                        // Bottom branch of butterfly has subtraction,
-                        // followed by multiplication by twiddle factor
                         xBotRe = xTopRe - xBotRe;
                         xBotIm = xTopIm - xBotIm;
                         xBot.re = xBotRe * wRe - xBotIm * wIm;
                         xBot.im = xBotRe * wIm + xBotIm * wRe;
 
-                        // Copy data back to FFTElements
                         m_inputFFTElements[xTop.index] = xTop;
                         m_inputFFTElements[xBot.index] = xBot;
 
-
-                        // Advance butterfly to next top & bottom positions
-                        xTop = m_inputFFTElements[xTop.next];
-                        xBot = m_inputFFTElements[xBot.next];
-
-                        // Update the twiddle factor, via complex multiply
-                        // by unit vector with the appropriate angle
-                        // (wRe + j wIm) = (wRe + j wIm) x (wMulRe + j wMulIm)
-                        float tRe = wRe;
+                        tRe = wRe;
                         wRe = wRe * wMulRe - wIm * wMulIm;
                         wIm = tRe * wMulIm + wIm * wMulRe;
+
+                        if (xTop.next != -1 && xBot.next != -1)
+                        {
+                            xTop = m_inputFFTElements[xTop.next];
+                            xBot = m_inputFFTElements[xBot.next];
+                        }
+
                     }
                 }
 
@@ -144,27 +141,21 @@ namespace Nebukam.Audio.FrequencyAnalysis
             // linked list elements to a complex output vector & properly apply scale factors.
 
             x = m_inputFFTElements[0];
-            bool end = false;
-            while (!end)
+            bool run = true;
+            while (run)
             {
-                int target = (int)x.revTgt;
+                m_inputComplexFloatsFull[(int)x.revTgt]
+                    = new ComplexFloat(x.re * FFTScale, x.im * FFTScale);
 
-                ComplexFloat cf = m_inputComplexFloatsFull[target];
-                cf.real = x.re * FFTScale;
-                cf.imaginary = x.im * FFTScale;
-
-                m_inputComplexFloatsFull[target] = cf;
-
-                end = x.next == -1;
-
-                if (!end)
+                if (x.next == -1)
+                    run = false;
+                else
                     x = m_inputFFTElements[x.next];
             }
 
-            // Return 1/2 the FFT result from DC to Fs/2 (The real part of the spectrum)
+
             int mLengthHalf = m_outputComplexFloats.Length;
-            for (int i = 0; i < mLengthHalf; i++)
-                m_outputComplexFloats[i] = m_inputComplexFloatsFull[i];
+            NativeArray<ComplexFloat>.Copy(m_inputComplexFloatsFull, m_outputComplexFloats, mLengthHalf);
 
             // DC and Fs/2 Points are scaled differently, since they have only a real part
             m_outputComplexFloats[0] = new ComplexFloat(m_outputComplexFloats[0].real / sqrt(2));

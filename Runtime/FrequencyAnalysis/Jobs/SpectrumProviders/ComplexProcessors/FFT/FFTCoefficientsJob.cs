@@ -34,11 +34,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public struct FFTCoefficientsJob : IJob
     {
 
-        public NativeArray<float> m_outputCoefficients;
-        public FFTWindow m_windowType;
-        public float m_scaleFactor;
         public bool m_recompute;
-
+        public NativeArray<float> m_params;
+        public FFTWindow m_windowType;
+        public NativeArray<float> m_outputCoefficients;
+        
         public void Execute()
         {
 
@@ -342,11 +342,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
                     break;
             }
 
-            float sum = 0;
+            float sum = 0f;
             for(int i = 0; i < count; i++)
                 sum += m_outputCoefficients[i];
-
-            m_scaleFactor = 1.0f / (sum / count);
+            
+            m_params[FFTParams.SCALE_FACTOR] = 1.0f / (sum / (float)count);
 
         }
 

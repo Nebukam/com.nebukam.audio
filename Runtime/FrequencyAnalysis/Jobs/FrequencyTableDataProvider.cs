@@ -11,8 +11,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     public interface IFrequencyTableProvider : IProcessor
     {
-        NativeArray<FrequencyRange> outputFrequencyRanges { get; }
-        FrequencyTable frequencyTable { get; set; }
+        NativeArray<FrequencyRange> outputRanges { get; }
+        FrequencyTable table { get; set; }
     }
 
     [BurstCompile]
@@ -21,14 +21,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_recompute = true;
 
-        protected List<FrequencyRange> m_lockedRanges = new List<FrequencyRange>(10);
+        protected List<FrequencyRange> m_lockedRanges = new List<FrequencyRange>(50);
         public List<FrequencyRange> lockedRanges { get { return m_lockedRanges; } }
 
-        protected NativeArray<FrequencyRange> m_outputFrequencyRanges = new NativeArray<FrequencyRange>(0, Allocator.Persistent);
-        public NativeArray<FrequencyRange> outputFrequencyRanges { get { return m_outputFrequencyRanges; } }
+        protected NativeArray<FrequencyRange> m_outputRanges = new NativeArray<FrequencyRange>(0, Allocator.Persistent);
+        public NativeArray<FrequencyRange> outputRanges { get { return m_outputRanges; } }
 
         protected FrequencyTable m_frequencyTable;
-        public FrequencyTable frequencyTable {
+        public FrequencyTable table {
             get { return m_frequencyTable; }
             set
             {
@@ -37,14 +37,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 m_recompute = true;
             }
         }
-
-        #region Inputs
-
-        protected bool m_inputsDirty = true;
-
-        protected IFrequencyFrameDataProvider m_inputFrequencyFrameDataProvider;
-
-        #endregion
 
         protected override void InternalLock()
         {
@@ -64,28 +56,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void Prepare(ref Unemployed job, float delta)
         {
 
-            if (m_inputsDirty)
-            {
-
-                if (!TryGetFirstInCompound(out m_inputFrequencyFrameDataProvider))
-                {
-                    throw new System.Exception("IFrequencyFrameDataProvider missing");
-                }
-
-                m_inputsDirty = false;
-
-            }
-
-            //TODO : Gather Tables references from Frames
-            // Need two arrays :
-            // First is table info (start index, size)
-            // Second is inlined aggregation of all tables found
-
             if (m_recompute) 
             {
-                Copy(ref m_lockedRanges, ref m_outputFrequencyRanges);
+                Copy(m_lockedRanges, ref m_outputRanges);
                 m_recompute = false;
             }
+
         }
 
         protected override void InternalUnlock() { }
@@ -94,7 +70,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void InternalDispose()
         {
-            m_outputFrequencyRanges.Dispose();
+            m_outputRanges.Dispose();
         }
 
     }

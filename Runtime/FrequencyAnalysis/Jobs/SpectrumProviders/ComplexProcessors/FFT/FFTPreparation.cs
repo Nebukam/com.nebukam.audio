@@ -13,11 +13,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class FFTPreparation : AbstractComplexProvider<FFTPreparationJob>
     {
 
-        // Need a complex array the size of the sample points to feed the complex spectrum
-        protected NativeArray<ComplexFloat> m_outputComplexFloatsFull = new NativeArray<ComplexFloat>(0, Allocator.Persistent);
-        protected NativeArray<FFTElement> m_outputFFTElements = new NativeArray<FFTElement>(0, Allocator.Persistent);
+        protected bool m_recompute = true;
 
+        protected NativeArray<ComplexFloat> m_outputComplexFloatsFull = new NativeArray<ComplexFloat>(0, Allocator.Persistent);
         public NativeArray<ComplexFloat> outputComplexFloatsFull { get { return m_outputComplexFloatsFull; } }
+
+        protected NativeArray<FFTElement> m_outputFFTElements = new NativeArray<FFTElement>(0, Allocator.Persistent);
         public NativeArray<FFTElement> outputFFTElements { get { return m_outputFFTElements; } }
 
         protected internal uint m_outputFFTLogN = 0;
@@ -25,7 +26,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Inputs
 
-        ISamplesProvider m_inputSamplesProvider;
+        protected FFTParams m_inputParams;
+        protected ISamplesProvider m_inputSamplesProvider;
 
         #endregion
 
@@ -35,19 +37,22 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInCompound(out m_inputSamplesProvider, true))
+                if (!TryGetFirstInCompound(out m_inputParams)
+                    || !TryGetFirstInCompound(out m_inputSamplesProvider, true))
                 {
                     throw new System.Exception("ISamplesProvider missing.");
                 }
 
             }
 
-            int pointCount = m_inputSamplesProvider.outputMultiChannelSamples.Length;
+            int pointCount = m_inputSamplesProvider.outputSamples.Length;
 
+            m_recompute = !MakeLength(ref m_outputFFTElements, pointCount);
             MakeLength(ref m_outputComplexFloatsFull, pointCount);
-            MakeLength(ref m_outputFFTElements, pointCount);
-
-            job.m_inputComplexFloats = m_outputComplexFloatsFull;
+            
+            job.m_recompute = m_recompute;
+            job.m_params = m_inputParams.outputParams;
+            job.complexFloats = m_outputComplexFloats;
             job.m_outputFFTElements = m_outputFFTElements;
 
             base.Prepare(ref job, delta);
@@ -56,7 +61,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void Apply(ref FFTPreparationJob job)
         {
-            m_outputFFTLogN = job.m_outputFFTLogN;
+
         }
 
         protected override void InternalDispose()

@@ -35,7 +35,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             int result = base.Prepare(ref job, delta);
 
-            Copy(ref m_channels, ref m_inputChannels);
+            Copy(m_channels, ref m_inputChannels);
             job.m_inputChannels = m_inputChannels;
 
             return result;

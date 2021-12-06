@@ -34,15 +34,19 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         [ReadOnly]
-        public NativeArray<ComplexFloat> m_inputComplexFloats;
-        public NativeArray<ComplexFloat> outputComplexFloats { set { m_inputComplexFloats = value; } }
+        public NativeArray<float> m_params;
+
+        [ReadOnly]
+        private NativeArray<ComplexFloat> m_inputComplexFloats;
+        public NativeArray<ComplexFloat> complexFloats { set { m_inputComplexFloats = value; } }
 
         public NativeArray<float> m_outputSpectrum;
+
         public float m_inputScaleFactor;
 
         public void Execute(int index)
         {
-            m_outputSpectrum[index] = m_inputComplexFloats[index].magnitude * m_inputScaleFactor;
+            m_outputSpectrum[index] = m_inputComplexFloats[index].magnitude * m_params[FFTParams.SCALE_FACTOR];
         }
 
     }

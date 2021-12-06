@@ -28,9 +28,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
         }
 
-        protected float m_outputScaleFactor = 1f;
-        public float outputScaleFactor { get { return m_outputScaleFactor; } }
-
         protected NativeArray<float> m_outputCoefficients = new NativeArray<float>(0, Allocator.Persistent);
         public NativeArray<float> outputCoefficients { get { return m_outputCoefficients; } }
 
@@ -38,7 +35,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_inputsDirty = true;
 
-        ISamplesProvider m_inputSamplesProvider;
+        protected FFTParams m_inputParams;
+        protected ISamplesProvider m_inputSamplesProvider;
 
         #endregion
 
@@ -50,7 +48,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInCompound(out m_inputSamplesProvider))
+                if (!TryGetFirstInCompound(out m_inputParams)
+                    ||!TryGetFirstInCompound(out m_inputSamplesProvider))
                 {
                     throw new System.Exception("ISamplesProvider missing.");
                 }
@@ -59,12 +58,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            m_recompute = !MakeLength(ref m_outputCoefficients, (int)m_inputSamplesProvider.frequencyBins);
+            m_recompute = !MakeLength(ref m_outputCoefficients, m_inputSamplesProvider.outputSamples.Length);
 
+            job.m_recompute = m_recompute;
+            job.m_params = m_inputParams.outputParams;
             job.m_windowType = m_window;
-            job.m_recompute = m_recompute;
             job.m_outputCoefficients = m_outputCoefficients;
-            job.m_recompute = m_recompute;
 
             m_recompute = false;
 
@@ -74,7 +73,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void Apply(ref FFTCoefficientsJob job)
         {
-            m_outputScaleFactor = job.m_scaleFactor;
+            
         }
 
         protected override void InternalDispose()

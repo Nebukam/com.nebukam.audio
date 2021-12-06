@@ -17,6 +17,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class FFTProcessor : ProcessorChain, IFFT //, ISpectrumProvider
     {
 
+        protected FFTParams m_FFTparams;
         protected FFTCoefficients m_FFTCoefficients;
         protected FFTScalePass m_FFTScalePass;
         protected FFTPreparation m_FFTPreparation;
@@ -32,6 +33,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public FFTProcessor()
         {
+            Add(ref m_FFTparams);
             Add(ref m_FFTCoefficients);
             Add(ref m_FFTScalePass);
             Add(ref m_FFTPreparation);

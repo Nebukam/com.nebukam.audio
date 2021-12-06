@@ -15,21 +15,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region IFrequencyBandProvider
 
-        public NativeArray<float> outputBand8 { get { return m_frequencyBandsProvider.outputBand8; } }
-        public NativeArray<float> outputBand16 { get { return m_frequencyBandsProvider.outputBand16; } }
-        public NativeArray<float> outputBand32 { get { return m_frequencyBandsProvider.outputBand32; } }
-        public NativeArray<float> outputBand64 { get { return m_frequencyBandsProvider.outputBand64; } }
+        public NativeArray<float> outputBand8   { get { return m_frequencyBandsProvider.outputBand8; } }
+        public NativeArray<float> outputBand16  { get { return m_frequencyBandsProvider.outputBand16; } }
+        public NativeArray<float> outputBand32  { get { return m_frequencyBandsProvider.outputBand32; } }
+        public NativeArray<float> outputBand64  { get { return m_frequencyBandsProvider.outputBand64; } }
         public NativeArray<float> outputBand128 { get { return m_frequencyBandsProvider.outputBand128; } }
 
+        public NativeArray<BandInfos> outputBandInfos8      { get { return m_frequencyBandsProvider.outputBandInfos8; } }
+        public NativeArray<BandInfos> outputBandInfos16     { get { return m_frequencyBandsProvider.outputBandInfos16; } }
+        public NativeArray<BandInfos> outputBandInfos32     { get { return m_frequencyBandsProvider.outputBandInfos32; } }
+        public NativeArray<BandInfos> outputBandInfos64     { get { return m_frequencyBandsProvider.outputBandInfos64; } }
+        public NativeArray<BandInfos> outputBandInfos128    { get { return m_frequencyBandsProvider.outputBandInfos128; } }
+
         #endregion
+
+        #region Inputs
 
         protected bool m_inputsDirty = true;
 
         protected IFrequencyTableProvider m_frequencyTableProvider;
-
-        #region Inputs
-
-
 
         #endregion
 
@@ -43,18 +47,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void Prepare(float delta)
         {
-            // Fetch FrequencyTableDataProvider
-            // feed it to frequency band extraction
-            if (m_inputsDirty)
-            {
-
-                if (!TryGetFirstInCompound(out m_frequencyTableProvider))
-                {
-
-                }
-
-                m_inputsDirty = false;
-            }
 
         }
 

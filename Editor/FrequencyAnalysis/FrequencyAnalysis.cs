@@ -90,6 +90,20 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         {
             freqAnalyser = new FrequencyAnalyserSync();
             data = new FrameDataDictionary();
+
+            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
+
+        }
+
+        public static void OnBeforeAssemblyReload()
+        {
+
+        }
+
+        public static void OnAfterAssemblyReload()
+        {
+
         }
 
         public static void SetCurrentFrameList(FrequencyFrameList list)

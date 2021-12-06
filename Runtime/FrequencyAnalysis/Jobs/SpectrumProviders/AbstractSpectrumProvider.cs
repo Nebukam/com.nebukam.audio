@@ -46,7 +46,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             FetchSpectrumData();
 
-            Copy(ref m_rawSpectrum, ref m_outputSpectrum);
+            Copy(m_rawSpectrum, ref m_outputSpectrum);
 
         }
 

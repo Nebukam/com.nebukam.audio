@@ -33,24 +33,29 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public struct FFTPreparationJob : IJob, IComplexJob
     {
 
+        public bool m_recompute;
+
+        public NativeArray<float> m_params;
+
         [ReadOnly]
-        public NativeArray<ComplexFloat> m_inputComplexFloats;
-        public NativeArray<ComplexFloat> outputComplexFloats { set { m_inputComplexFloats = value; } }
+        private NativeArray<ComplexFloat> m_outputComplexFloats;
+        public NativeArray<ComplexFloat> complexFloats { set { m_outputComplexFloats = value; } }
 
         public NativeArray<FFTElement> m_outputFFTElements;
-
-        public uint m_outputFFTLogN;
 
         public void Execute()
         {
 
-            int pointCount = m_outputFFTElements.Length;
+            if (!m_recompute) { return; }
 
+            uint FFTLogN = 1;
+            int pointCount = m_outputFFTElements.Length;
+            
             // Find the power of two for the total FFT size up to 2^32
             bool foundIt = false;
-            for (m_outputFFTLogN = 1; m_outputFFTLogN <= 32; m_outputFFTLogN++)
+            for (FFTLogN = 1; FFTLogN <= 32; FFTLogN++)
             {
-                float n = math.pow(2.0f, m_outputFFTLogN);
+                float n = math.pow(2.0f, FFTLogN);
                 if (pointCount == n)
                 {
                     foundIt = true;
@@ -66,20 +71,22 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
 
 #endif
-
+            
             //halfLength = (pointCount / 2) + 1;            
 
             FFTElement e;
-            for (int i = 0; i <= pointCount; i++)
+            for (int i = 0; i < pointCount; i++)
             {
                 e = m_outputFFTElements[i];            
                 
                 e.index = i;
                 e.next = i == pointCount-1 ? -1 : i + 1; // Set up "next" pointers.
-                e.revTgt = BitReverse((uint)i, m_outputFFTLogN); // Specify target for bit reversal re-ordering.
+                e.revTgt = BitReverse((uint)i, FFTLogN); // Specify target for bit reversal re-ordering.
 
                 m_outputFFTElements[i] = e;
             }
+
+            m_params[FFTParams.LOG_N] = FFTLogN;
 
         }
 

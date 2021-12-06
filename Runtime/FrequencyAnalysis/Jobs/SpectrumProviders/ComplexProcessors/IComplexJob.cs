@@ -31,7 +31,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     public interface IComplexJob
     {
-        public NativeArray<ComplexFloat> outputComplexFloats { set; }
+        public NativeArray<ComplexFloat> complexFloats { set; }
     }
 
 }

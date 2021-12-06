@@ -17,10 +17,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         NativeArray<float> outputSamples { set; }
     }
 
-    public interface ISamplesProvider : IProcessor
+    public interface ISamplesProvider : IProcessor, ISpectrumProvider
     {
 
-        Bins frequencyBins { get; set; }
         AudioClip audioClip { get; set; }
         float time { get; set; }
 
@@ -34,6 +33,15 @@ namespace Nebukam.Audio.FrequencyAnalysis
         where T : struct, ISamplesExtractionJob
     {
 
+        #region ISamplesProvider
+
+        protected NativeArray<float> m_outputSpectrum = new NativeArray<float>(0, Allocator.Persistent);
+        public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
+
+        public Bins frequencyBins { get; set; } = Bins.length512;
+
+        #endregion
+
         protected float[] m_multiChannelSamples = new float[0];
 
         protected internal NativeArray<float> m_outputMultiChannelSamples = new NativeArray<float>(0, Allocator.Persistent);
@@ -41,8 +49,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected internal NativeArray<float> m_outputSamples = new NativeArray<float>(0, Allocator.Persistent);
         public NativeArray<float> outputSamples { get { return m_outputSamples; } }
-
-        public Bins frequencyBins { get; set; } = Bins.length512;
 
         protected internal AudioClip m_lockedAudioClip;
         protected internal AudioClip m_audioClip;
@@ -83,18 +89,22 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 || m_multiChannelSamples.Length != pointCount)
                 m_multiChannelSamples = new float[pointCount];
 
-            m_lockedAudioClip.GetData(m_multiChannelSamples, m_offsetSamples);
+            m_lockedAudioClip.GetData(m_multiChannelSamples, math.clamp(m_offsetSamples, 0, m_audioClip.samples - pointCount));
 
-            MakeLength(ref m_outputSamples, (int)frequencyBins);
-            Copy(ref m_multiChannelSamples, ref m_outputMultiChannelSamples);
 
-            Debug.Log("m_multiChannelSamples l = "+ m_multiChannelSamples.Length + " / m_offsetSamples = "+ m_offsetSamples + " / m_outputMultiChannelSamples L = "+ m_outputMultiChannelSamples.Length+ " // numChannels = "+ numChannels);
+            int numBins = (int)frequencyBins;
+
+            MakeLength(ref m_outputSpectrum, numBins);
+            MakeLength(ref m_outputSamples, numBins * 2);
+            Copy(m_multiChannelSamples, ref m_outputMultiChannelSamples);
+
+            //Debug.Log("m_multiChannelSamples l = "+ m_multiChannelSamples.Length + " / m_offsetSamples = "+ m_offsetSamples + " / m_outputMultiChannelSamples L = "+ m_outputMultiChannelSamples.Length+ " // numChannels = "+ numChannels);
 
             job.inputNumChannels = numChannels;
             job.inputMultiChannelSamples = m_outputMultiChannelSamples;
             job.outputSamples = m_outputSamples;
 
-            return (int)frequencyBins;
+            return m_outputSamples.Length;
 
         }
 
@@ -111,6 +121,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void InternalDispose()
         {
             m_multiChannelSamples = null;
+
+            m_outputSpectrum.Dispose();
             m_outputMultiChannelSamples.Dispose();
             m_outputSamples.Dispose();
         }

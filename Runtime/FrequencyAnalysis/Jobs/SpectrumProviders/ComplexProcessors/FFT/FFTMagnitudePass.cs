@@ -16,7 +16,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_inputsDirty = true;
 
-        protected FFTCoefficients m_inputFFTCoefficients;
+        protected FFTParams m_inputParams;
         protected IComplexProvider m_inputComplexProvider;
         protected ISpectrumProvider m_inputSpectrumProvider;
 
@@ -30,19 +30,19 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInCompound(out m_inputFFTCoefficients)
+                if (!TryGetFirstInCompound(out m_inputParams)
                     || !TryGetFirstInCompound(out m_inputComplexProvider)
                     || !TryGetFirstInCompound(out m_inputSpectrumProvider))
                 {
-                    throw new System.Exception("FFTCoefficients or IChannelSamplesProvider missing.");
+                    throw new System.Exception("FFTCoefficients or IComplexProvider or ISpectrumProvidermissing.");
                 }
 
                 m_inputsDirty = false;
 
             }
 
-            job.m_inputComplexFloats = m_inputComplexProvider.outputComplexFloats;
-            job.m_inputScaleFactor = m_inputFFTCoefficients.outputScaleFactor;
+            job.m_params = m_inputParams.outputParams;
+            job.complexFloats = m_inputComplexProvider.outputComplexFloats;
             job.m_outputSpectrum = m_inputSpectrumProvider.outputSpectrum;
 
             return m_inputSpectrumProvider.outputSpectrum.Length;

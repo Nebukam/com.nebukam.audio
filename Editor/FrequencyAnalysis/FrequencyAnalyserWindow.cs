@@ -23,7 +23,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         const string PID_AudioClipTime = "FAW_AudioClipTime";
         const string PID_AudioClipPreviewDuration = "FAW_AudioClipPreviewDuration";
 
-        private const string m_title = "Frequency Analyser";
+        private const string m_title = "FAnalyser Viewer";
 
         private static FrequencyFrameList m_frequencyFrameList = null;
         private static AudioClip m_audioClip = null;
@@ -31,7 +31,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         private static float m_currentScale = 1f;
         private static float m_previewDuration = 1f;
 
-        [MenuItem("N:Toolkit/:Audio/Frequency Analyzer")]
+        [MenuItem("N:Toolkit/Audio/FAnalyser Viewer")]
         public static void ShowWindow()
         {
             FrequencyAnalyserWindow window = EditorWindow.GetWindow(typeof(FrequencyAnalyserWindow), false, m_title, true) as FrequencyAnalyserWindow;

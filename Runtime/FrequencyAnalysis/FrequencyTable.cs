@@ -65,6 +65,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
+        public int Start(int bins)
+        {
+            if (bins == 256) return start256;
+            if (bins == 512) return start512;
+            if (bins == 1024) return start1024;
+            if (bins == 2048) return start2048;
+            if (bins == 4096) return start4096;
+            return 0;
+        }
+
         public int Start(Bins bins)
         {
             if (bins == Bins.length256) return start256;
@@ -82,6 +92,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (bins == Bins.length1024) { start1024 = length; }
             if (bins == Bins.length2048) { start2048 = length; }
             if (bins == Bins.length4096) { start4096 = length; }
+        }
+
+        public int Length(int bins)
+        {
+            if (bins == 256) return length256;
+            if (bins == 512) return length512;
+            if (bins == 1024) return length1024;
+            if (bins == 2048) return length2048;
+            if (bins == 4096) return length4096;
+            return 0;
         }
 
         public int Length(Bins bins)
@@ -116,6 +136,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public int length1024;
         public int length2048;
         public int length4096;
+
+        public int Length(int bins)
+        {
+            if (bins == 256) return length256;
+            if (bins == 512) return length512;
+            if (bins == 1024) return length1024;
+            if (bins == 2048) return length2048;
+            if (bins == 4096) return length4096;
+            return 0;
+        }
 
         public int Length(Bins bins)
         {
@@ -182,10 +212,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     public struct BracketData
     {
-        public float peak;
+        public float min;
+        public float max;
         public float average;
         public int width;
-        public int reached;
     }
 
     [ExecuteAlways]
@@ -260,11 +290,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             array = m_bandInfos[Array.IndexOf(__bandTypes, bands)].bandInfos;
         }
 
-        public void GetBandInfos(out NativeArray<BandInfos> array, Bands bands)
-        {
-            array = m_bandInfos[Array.IndexOf(__bandTypes, bands)].nativeBandInfos;
-        }
-
         public void BuildTable()
         {
 
@@ -311,15 +336,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             // Initialize bands infos
 
-            // Dispose previous pairs
-            if (m_bandInfos != null)
-            {
-                foreach (BandInfosPair pair in m_bandInfos)
-                {
-                    pair.Dispose();
-                }
-            }
-
             m_bandInfos = new BandInfosPair[__bandTypes.Length];
 
             BandInfosPair infosPair;
@@ -335,20 +351,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             // TODO : Compute width indices for each bin size / FRange
 
-        }
-
-        /// <summary>
-        /// Release unmanaged ressources
-        /// </summary>
-        private void OnDestroy()
-        {
-            Cleanup();
-        }
-
-        private void Cleanup()
-        {
-            for (int i = 0; i < m_bandInfos.Length; i++)
-                m_bandInfos[i].Dispose();
         }
 
         #region Static registry
@@ -401,7 +403,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
             AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
 #endif
-            Cleanup();
 
             if (loadedFrequencyTableList != null)
             {
@@ -424,7 +425,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public void OnBeforeAssemblyReload()
         {
-            Cleanup();
             CleanupStaticRegistry();
         }
 
@@ -447,24 +447,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected BandInfos[] m_bandInfos;
         public BandInfos[] bandInfos { get { return m_bandInfos; } }
 
-        protected bool m_nativeCollectionsInitialized = false;
-        protected NativeArray<BandInfos> m_nativeBandInfos;
-        public NativeArray<BandInfos> nativeBandInfos
-        {
-            get
-            {
-
-                if (!m_nativeCollectionsInitialized)
-                {
-                    m_nativeCollectionsInitialized = true;
-                    m_nativeBandInfos = new NativeArray<BandInfos>(m_bandInfos.Length, Allocator.Persistent);
-                    Copy(ref m_bandInfos, ref m_nativeBandInfos);
-                }
-
-                return m_nativeBandInfos;
-            }
-        }
-
         public int[] m_binsPeakIterations;
 
         public BandInfosPair(Bands b)
@@ -475,13 +457,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public int GetPeak(Bins bins)
         {
             return m_binsPeakIterations[Array.IndexOf(FrequencyTable.__binsTypes, bins)];
-        }
-
-
-
-        public void InitializeNativeCollections()
-        {
-
         }
 
         internal void Initialize(FrequencyRange[] inputRanges, bool useRawDistribution = false)
@@ -536,8 +511,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
                     bandLimit = ((float)b + 1f) * bandWidth,
                     bandRemainder = bandWidth;
 
-                //Debug.Log("START >>>> Band " + (b+1) + "/" + numBands + "[ "+ bandNStart + " | "+ bandNEnd + " ]");
-
                 while (currentCoverage < bandLimit)
                 {
 
@@ -573,15 +546,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
                 }
 
-                //Debug.Log("Band " + (b + 1) + "/" + numBands + " -> " + bands[b].width + "Hz ----------");
-
             }
-
-            float total = 0f;
-            for (int i = 0; i < numBands; i++)
-                total += m_bandInfos[i].width;
-
-            //Debug.LogError("---> "+ total);
 
             //////////
 
@@ -592,14 +557,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
             {
                 BandInfos band;
 
-                int maxIterations = 0;
-                int iterationRemainder = (int)bin;
-                float binSize = math.floor((float)maxHz / (float)iterationRemainder);
+                int 
+                    maxIterations = 0,
+                    iterationRemainder = (int)bin;
 
-                //string str = "";
+                float 
+                    binSize = math.floor((float)maxHz / (float)iterationRemainder);
 
                 for (int i = 0; i < numBands; i++)
                 {
+
                     band = m_bandInfos[i];
                     int iterationCount;
 
@@ -610,38 +577,88 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
                     iterationCount = math.min(iterationRemainder, iterationCount);
                     band.Length(bin, iterationCount);
-                    //str += ", " + iterationCount;
+                    
                     iterationRemainder -= iterationCount;
                     m_bandInfos[i] = band;
                     maxIterations = math.max(maxIterations, iterationCount);
+
                 }
 
                 if (iterationRemainder != 0)
                 {
+
                     band = m_bandInfos[numBands - 1];
                     band.Length(bin, band.Length(bin) + iterationRemainder);
                     m_bandInfos[numBands - 1] = band;
                     maxIterations = math.max(maxIterations, band.Length(bin));
-                }
 
-                int ttl = 0;
-                for (int i = 0; i < numBands; i++)
-                    ttl += m_bandInfos[i].Length(bin);
+                }
 
                 m_binsPeakIterations[binIndex] = maxIterations;
                 binIndex++;
-                //Debug.Log(str + " = "+ttl+"("+ iterationRemainder + ")");
 
             }
 
         }
 
-        internal void Dispose()
+        #region Backup frequency ranges
+
+        /*
+        
+        internal static FrequencyRange[] ___referenceRanges = new FrequencyRange[]
+            {
+            new FrequencyRange( 20 ), // Start of audible range
+            new FrequencyRange( 25 ),
+            new FrequencyRange( 31 ),
+            new FrequencyRange( 40 ),
+            new FrequencyRange( 50 ),
+            new FrequencyRange( 63 ),
+            new FrequencyRange( 80 ),
+            new FrequencyRange( 100 ),
+            new FrequencyRange( 125 ),
+            new FrequencyRange( 160 ),
+            new FrequencyRange( 200 ),
+            new FrequencyRange( 250 ),
+            new FrequencyRange( 315 ),
+            new FrequencyRange( 400 ),
+            new FrequencyRange( 500 ),
+            new FrequencyRange( 630 ),
+            new FrequencyRange( 800 ),
+            new FrequencyRange( 1000 ),
+            new FrequencyRange( 1250 ),
+            new FrequencyRange( 1600 ),
+            new FrequencyRange( 2000 ),
+            new FrequencyRange( 2500 ),
+            new FrequencyRange( 3150 ),
+            new FrequencyRange( 4000 ),
+            new FrequencyRange( 5000 ),
+            new FrequencyRange( 6300 ),
+            new FrequencyRange( 8000 ),
+            new FrequencyRange( 10000 ),
+            new FrequencyRange( 12500 ),
+            new FrequencyRange( 16000 ),
+            new FrequencyRange( FrequencyTable.maxHz ) // & Up end of audible range
+            };
+
+        internal static FrequencyRange[] ___mainRanges = new FrequencyRange[]
         {
-            m_bandInfos = null;
-            if (m_nativeCollectionsInitialized)
-                m_nativeBandInfos.Dispose();
-        }
+            // https://www.teachmeaudio.com/mixing/techniques/audio-spectrum
+
+            //new FRange( 20 ), // 0-20 : --
+            new FrequencyRange( 60 ), // 20-60 : Sub-bass
+            new FrequencyRange( 250 ), // 60-250 : Bass
+            new FrequencyRange( 500 ), // 250-500 : Low Midrange
+            new FrequencyRange( 2000 ), // 500-2000 : Midrange
+            new FrequencyRange( 4000 ), // 2000-4000 : Upper Midrange
+            new FrequencyRange( 6000 ), // 4000-6000 : Presence
+            new FrequencyRange( 20000 ), // 6000-20000 : Brilliance 
+            new FrequencyRange( FrequencyTable.maxHz ) // 20000-MAX : --
+
+        };
+
+        */
+
+        #endregion
 
     }
 

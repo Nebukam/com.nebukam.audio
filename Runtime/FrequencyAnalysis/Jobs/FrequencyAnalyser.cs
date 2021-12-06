@@ -19,16 +19,17 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Analysis distribution
 
-        protected FrequencyAnalysisDistribution m_analysisDistribution;
+        protected SpectrumAnalysis m_spectrumAnalysis;
+        public SpectrumAnalysis distribution { get { return m_spectrumAnalysis; } }
 
         public void Add(FrameDataDictionary frameDataDict)
         {
-            m_analysisDistribution.Add(frameDataDict);
+            m_spectrumAnalysis.Add(frameDataDict);
         }
 
         public void Remove(FrameDataDictionary frameDataDict)
         {
-            m_analysisDistribution.Remove(frameDataDict);
+            m_spectrumAnalysis.Remove(frameDataDict);
         }
 
         #endregion
@@ -37,7 +38,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             Add(ref m_spectrumProvider);
             Add(ref m_modifiers);
-            Add(ref m_analysisDistribution);
+            Add(ref m_spectrumAnalysis);
         }
 
         protected override void InternalLock() { }
@@ -48,7 +49,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
-        protected override void Apply() { }
+        protected override void Apply() 
+        {
+        
+        }
 
         protected override void InternalUnlock() { }
 

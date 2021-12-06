@@ -1,4 +1,5 @@
 ﻿using Nebukam.JobAssist;
+using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
@@ -43,7 +44,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             get { return m_channelSamplesProvider.frequencyBins; } 
             set { m_channelSamplesProvider.frequencyBins = value; } 
         }
-        public NativeArray<float> outputSpectrum { get { return m_channelSamplesProvider.outputSamples; } }
+
+        public NativeArray<float> outputSpectrum { get { return m_channelSamplesProvider.outputSpectrum; } }
 
         #endregion
 

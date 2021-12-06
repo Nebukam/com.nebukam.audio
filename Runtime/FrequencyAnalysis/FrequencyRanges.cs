@@ -314,7 +314,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            Debug.Log(m_maxHz);
+            //Debug.Log(m_maxHz);
 
             return bands;
 

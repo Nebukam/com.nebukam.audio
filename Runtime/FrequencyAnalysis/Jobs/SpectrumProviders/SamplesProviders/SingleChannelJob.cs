@@ -13,14 +13,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         [ReadOnly]
-        public int m_inputNumChannels;
+        private int m_inputNumChannels;
         public int inputNumChannels { set { m_inputNumChannels = value; } }
 
         [ReadOnly]
-        public NativeArray<float> m_inputMultiChannelSamples;
+        private NativeArray<float> m_inputMultiChannelSamples;
         public NativeArray<float> inputMultiChannelSamples { set { m_inputMultiChannelSamples = value; } }
 
-        public NativeArray<float> m_outputSamples;
+        private NativeArray<float> m_outputSamples;
         public NativeArray<float> outputSamples { set { m_outputSamples = value; } }
 
         public int channel;

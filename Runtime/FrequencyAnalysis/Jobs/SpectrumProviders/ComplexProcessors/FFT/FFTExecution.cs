@@ -9,17 +9,20 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
     
     [BurstCompile]
-    public class FFTExecution : AbstractComplexProvider<FFTExecutionJob>
+    public class FFTExecution : Processor<FFTExecutionJob>
     {
-
-        protected NativeArray<ComplexFloat> m_fullLengthFloats = new NativeArray<ComplexFloat>(0, Allocator.Persistent);
 
         #region Inputs
 
-        protected internal ISamplesProvider m_inputChannelSamplesProvider;
+        protected bool m_inputsDirty = true;
+
+        protected FFTParams m_inputParams;
+        protected internal ISamplesProvider m_inputSamplesProvider;
         protected internal FFTPreparation m_inputFFTPreparation = null;
 
         #endregion
+
+        protected override void InternalLock() { }
 
         protected override void Prepare(ref FFTExecutionJob job, float delta)
         {
@@ -27,22 +30,22 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if (!TryGetFirstInCompound(out m_inputChannelSamplesProvider, true)
+                if (!TryGetFirstInCompound(out m_inputParams)
+                    || !TryGetFirstInCompound(out m_inputSamplesProvider, true)
                     || !TryGetFirstInCompound(out m_inputFFTPreparation, true))
                 {
-                    throw new System.Exception("IChannelSamplesProvider or FFTPreparation missing.");
+                    throw new System.Exception("ISamplesProvider or FFTPreparation missing.");
                 }
+
+                m_inputsDirty = false;
 
             }
 
-            base.Prepare(ref job, delta);
-
-
-            job.outputComplexFloats = m_inputFFTPreparation.outputComplexFloats;
+            job.m_params = m_inputParams.outputParams;
             job.m_inputComplexFloatsFull = m_inputFFTPreparation.outputComplexFloatsFull;
+            job.complexFloats = m_inputFFTPreparation.outputComplexFloats;
             job.m_inputFFTElements = m_inputFFTPreparation.outputFFTElements;
-            job.m_inputSamples = m_inputChannelSamplesProvider.outputSamples;
-            job.m_FFTLogN = m_inputFFTPreparation.outputFFTLogN;
+            job.m_inputSamples = m_inputSamplesProvider.outputSamples;
 
         }
 
@@ -51,11 +54,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
             
         }
 
-        protected override void InternalDispose()
-        {
-            base.InternalDispose();
-            m_fullLengthFloats.Dispose();
-        }
+        protected override void InternalUnlock() { }
+
+        protected override void InternalDispose() { }
 
     }
 

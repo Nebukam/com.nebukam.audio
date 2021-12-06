@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ffe124270a1adb40bdd3b25d9cb128e, type: 3}
+  m_Name: Frame C
+  m_EditorClassIdentifier: 
+  ID: C
+  table: {fileID: 11400000, guid: 28d8c9edd9c7a984384feff2300dd738, type: 2}
+  bands: 8
+  output: 2
+  extraction: 1
+  tolerance: 0
+  frequenciesBand:
+    x: 0
+    y: 1
+  frequenciesBracket:
+    x: 0
+    y: 1
+  frequenciesRaw:
+    x: 0
+    y: 1
+  amplitude:
+    x: 0.37915406
+    y: 0.1858007
+  inputScale: 1
+  outputScale: 1
+  color: {r: 0.93452585, g: 0.12549017, b: 0.99215686, a: 1}
