@@ -80,11 +80,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             EnsureMinLength(ref m_outputFrameSamples, frameCount, frameCount);
 
-            job.m_inputBand8 = m_inputBandsProvider.outputBand8;
-            job.m_inputBand16 = m_inputBandsProvider.outputBand16;
-            job.m_inputBand32 = m_inputBandsProvider.outputBand32;
-            job.m_inputBand64 = m_inputBandsProvider.outputBand64;
-            job.m_inputBand128 = m_inputBandsProvider.outputBand128;
+            job.m_inputBand8 = m_inputBandsProvider.Get(Bands.band8).outputBands;
+            job.m_inputBand16 = m_inputBandsProvider.Get(Bands.band16).outputBands;
+            job.m_inputBand32 = m_inputBandsProvider.Get(Bands.band32).outputBands;
+            job.m_inputBand64 = m_inputBandsProvider.Get(Bands.band64).outputBands;
+            job.m_inputBand128 = m_inputBandsProvider.Get(Bands.band128).outputBands;
 
             job.m_outputFrameSamples = m_outputFrameSamples;
 

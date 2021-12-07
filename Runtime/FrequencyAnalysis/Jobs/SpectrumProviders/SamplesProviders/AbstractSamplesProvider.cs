@@ -55,6 +55,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region ISamplesProvider
 
+        protected NativeArray<float> m_outputPrevSpectrum = new NativeArray<float>(0, Allocator.Persistent);
+        public NativeArray<float> outputPrevSpectrum { get { return m_outputPrevSpectrum; } }
+
         protected NativeArray<float> m_outputSpectrum = new NativeArray<float>(0, Allocator.Persistent);
         public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
 
@@ -104,19 +107,19 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             int numChannels = m_audioClip.channels;
             int pointCount = (int)frequencyBins * 2 * numChannels;
-            
+
             if (m_multiChannelSamples == null
                 || m_multiChannelSamples.Length != pointCount)
                 m_multiChannelSamples = new float[pointCount];
 
             m_lockedAudioClip.GetData(m_multiChannelSamples, math.clamp(m_offsetSamples, 0, m_audioClip.samples - pointCount));
 
-
             int numBins = (int)frequencyBins;
 
             MakeLength(ref m_outputSpectrum, numBins);
             MakeLength(ref m_outputSamples, numBins * 2);
             Copy(m_multiChannelSamples, ref m_outputMultiChannelSamples);
+            Copy(m_outputSpectrum, ref m_outputPrevSpectrum);
 
             //Debug.Log("m_multiChannelSamples l = "+ m_multiChannelSamples.Length + " / m_offsetSamples = "+ m_offsetSamples + " / m_outputMultiChannelSamples L = "+ m_outputMultiChannelSamples.Length+ " // numChannels = "+ numChannels);
 

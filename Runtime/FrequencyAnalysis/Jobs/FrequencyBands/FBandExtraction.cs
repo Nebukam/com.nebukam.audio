@@ -28,73 +28,59 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-
-    /// <summary>
-    /// Process a single band group.
-    /// !!! NOTE !!!
-    /// For the sake of performance, this processor cannot be used in a standalone fashion
-    /// e.g it doesn't fetch required inputs on its own and instead requires a parent to set
-    /// the right infos.
-    /// </summary>
-    [BurstCompile]
     public class FBandExtraction : Processor<FBandExtractionJob>
     {
 
-        protected float[] m_cachedBandsOutput = new float[0];
-        public float[] cachedBandsOutput { get { return m_cachedBandsOutput; } }
+        protected NativeArray<float> m_outputBands = new NativeArray<float>(0, Allocator.Persistent);
+        public NativeArray<float> outputBands { get { return m_outputBands; } }
 
-        protected Bands m_referenceBand = Bands.band8;
-        public Bands referenceBand
+        protected NativeArray<BandInfos> m_bandInfos = new NativeArray<BandInfos>(0, Allocator.Persistent);
+        public NativeArray<BandInfos> bandInfos { get { return m_bandInfos; } }
+
+        protected Bands m_lockedBands = Bands.band8;
+        public Bands frequencyBands { get; set; } = Bands.band8;
+
+        protected FrequencyTable m_lockedTable = null;
+        public FrequencyTable table { get; set; } = null;
+
+        public ISpectrumProvider spectrumProvider { get; set; } = null;
+
+        protected override void InternalLock() 
         {
-            get { return m_referenceBand; }
-            set { 
-                m_referenceBand = value;
-                MakeLength(ref m_cachedBandsOutput, (int)value);
-            }
+
+            m_lockedBands = frequencyBands;
+            int numBins = (int)m_lockedBands;
+
+            bool forceTableUpdate = m_lockedTable != table;
+            m_lockedTable = table;
+
+            MakeLength(ref m_outputBands, numBins);
+            bool u = !MakeLength(ref m_bandInfos, numBins);
+
+            if (u || forceTableUpdate)
+                Copy(m_lockedTable.GetBandInfos(m_lockedBands), ref m_bandInfos);
+
         }
-
-        #region Inputs
-
-        protected NativeArray<BandInfos> m_inputBandInfos;
-        public NativeArray<BandInfos> inputBandsInfos
-        {
-            get { return m_inputBandInfos; }
-            set { m_inputBandInfos = value; }
-        }
-
-        protected NativeArray<float> m_inputSpectrum;
-        public NativeArray<float> inputSpectrum
-        {
-            get { return m_inputSpectrum; }
-            set { m_inputSpectrum = value; }
-        }
-
-        protected IFBandsProvider m_inputBandsProvider;
-        public IFBandsProvider inputBandsProvider
-        {
-            get { return m_inputBandsProvider; }
-            set { m_inputBandsProvider = value; }
-        }
-
-        #endregion
 
         protected override void Prepare(ref FBandExtractionJob job, float delta)
         {
-            job.m_referenceBands = m_referenceBand;
-            job.m_inputSpectrum = m_inputSpectrum;
-            m_inputBandsProvider.Push(m_referenceBand, ref job);
+            job.m_inputBandInfos = m_bandInfos;
+            job.m_outputBands = m_outputBands;
+            job.m_inputSpectrum = spectrumProvider.outputSpectrum;
         }
-
-        protected override void InternalLock() { }
-
-        protected override void InternalUnlock() { }
 
         protected override void Apply(ref FBandExtractionJob job)
         {
-            Copy(job.m_outputBands, ref m_cachedBandsOutput);
+            
         }
 
-        protected override void InternalDispose() { }
+        protected override void InternalUnlock() { }
+
+        protected override void InternalDispose() 
+        {
+            m_outputBands.Dispose();
+            m_bandInfos.Dispose();
+        }
 
     }
 }

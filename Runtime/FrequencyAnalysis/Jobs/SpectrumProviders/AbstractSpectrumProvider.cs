@@ -32,6 +32,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public interface ISpectrumProvider : IProcessor
     {
         Bins frequencyBins { get; set; }
+        NativeArray<float> outputPrevSpectrum { get; }
         NativeArray<float> outputSpectrum { get; }
     }
 
@@ -41,6 +42,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         protected float[] m_rawSpectrum;
+
+        protected NativeArray<float> m_outputPrevSpectrum = new NativeArray<float>(0, Allocator.Persistent);
+        public NativeArray<float> outputPrevSpectrum { get { return m_outputPrevSpectrum; } }
+
         protected NativeArray<float> m_outputSpectrum = new NativeArray<float>(0, Allocator.Persistent);
         public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
 
@@ -60,12 +65,15 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void Prepare(ref T job, float delta)
         {
 
+            int numBins = (int)frequencyBins;
+
             if (m_rawSpectrum == null 
-                || m_rawSpectrum.Length != (int)frequencyBins)
-                m_rawSpectrum = new float[(int)frequencyBins];
+                || m_rawSpectrum.Length != numBins)
+                m_rawSpectrum = new float[numBins];
 
             FetchSpectrumData();
 
+            Copy(m_outputSpectrum, ref m_outputPrevSpectrum);
             Copy(m_rawSpectrum, ref m_outputSpectrum);
 
         }

@@ -37,7 +37,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         
         protected AudioClipSpectrum<T_SAMPLES_PROVIDER> m_audioClipSpectrum;
 
-        public T_SAMPLES_PROVIDER sampleProvider { get { return m_audioClipSpectrum.channelSamplesProvider; } }
+        public T_SAMPLES_PROVIDER sampleProvider { get { return m_audioClipSpectrum.samplesProvider; } }
 
 
 

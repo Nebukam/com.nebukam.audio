@@ -35,7 +35,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         protected T_SAMPLES_PROVIDER m_samplesProvider;
-        public T_SAMPLES_PROVIDER channelSamplesProvider { get { return m_samplesProvider; } }
+        public T_SAMPLES_PROVIDER samplesProvider { get { return m_samplesProvider; } }
 
         protected FFTProcessor m_FFTProcessor;
         public IFFT FFTProcessor { get { return m_FFTProcessor; } }
@@ -64,6 +64,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             get { return m_samplesProvider.frequencyBins; } 
             set { m_samplesProvider.frequencyBins = value; } 
         }
+
+        public NativeArray<float> outputPrevSpectrum { get { return m_samplesProvider.outputPrevSpectrum; } }
 
         public NativeArray<float> outputSpectrum { get { return m_samplesProvider.outputSpectrum; } }
 
