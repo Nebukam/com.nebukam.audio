@@ -19,61 +19,44 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public interface ISpectrumModifierJob
-    {
-
-    }
-
-    public interface ISpectrumModifier : IProcessor
-    {
-
-    }
-
     [BurstCompile]
-    public abstract class AbstractSpectrumModifier<T> : Processor<T>, ISpectrumModifier
-        where T : struct, Unity.Jobs.IJob, ISpectrumModifierJob
+    public struct SpectrumFrameReadJob : IJobParallelFor
     {
 
-        #region Inputs
+        [ReadOnly]
+        public NativeArray<float> m_inputBand8;
+        [ReadOnly]
+        public NativeArray<float> m_inputBand16;
+        [ReadOnly]
+        public NativeArray<float> m_inputBand32;
+        [ReadOnly]
+        public NativeArray<float> m_inputBand64;
+        [ReadOnly]
+        public NativeArray<float> m_inputBand128;
+        [ReadOnly]
+        public NativeList<SpectrumFrameData> m_inputFrameData;
 
-        protected bool m_inputsDirty = true;
+        public NativeArray<Sample> m_outputFrameSamples;
 
-        protected ISpectrumProvider m_inputSpectrumProvider;
-
-        #endregion
-
-        protected override void InternalLock() { }
-
-        protected override void Prepare(ref T job, float delta)
+        public void Execute(int index)
         {
 
-            if (m_inputsDirty)
-            {
+            SpectrumFrameData frame = m_inputFrameData[index];
+            Sample sample = new Sample();
 
-                if (!TryGetFirstInCompound(out m_inputSpectrumProvider))
-                {
-                    throw new System.Exception("ISpectrumProvider missing");
-                }
-
-                m_inputsDirty = false;
-
-            }
+            m_outputFrameSamples[index] = sample;
 
         }
-
-        protected override void InternalUnlock() { }
-
-        protected override void Apply(ref T job) { }
 
     }
 }

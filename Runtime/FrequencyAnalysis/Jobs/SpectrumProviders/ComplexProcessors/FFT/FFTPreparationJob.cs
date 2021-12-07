@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2019 Timothé Lapetite - nebukam@gmail.com
+﻿// Copyright (c) 2021 Timothé Lapetite - nebukam@gmail.com.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         [ReadOnly]
         private NativeArray<ComplexFloat> m_outputComplexFloats;
         public NativeArray<ComplexFloat> complexFloats { set { m_outputComplexFloats = value; } }
+
+        [ReadOnly]
+        public NativeArray<float> m_inputSamples;
 
         public NativeArray<FFTElement> m_outputFFTElements;
 

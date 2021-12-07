@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2019 Timothé Lapetite - nebukam@gmail.com
+﻿// Copyright (c) 2021 Timothé Lapetite - nebukam@gmail.com.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public NativeArray<FFTElement> m_inputFFTElements;
 
+        [ReadOnly]
         public NativeArray<float> m_inputSamples;
 
         public void Execute()
@@ -63,17 +64,29 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 TAU_INV = -2.0f * PI;
 
             // Copy data into linked complex number objects
-            FFTElement x = m_inputFFTElements[0];
+            FFTElement ffte = m_inputFFTElements[0];
+            /*
             for (int i = 0; i < pointCount; i++)
             {
-                x.re = m_inputSamples[i];
-                x.im = 0.0f;
+                ffte.re = m_inputSamples[i];
+                ffte.im = 0.0f;
 
-                m_inputFFTElements[x.index] = x;
+                m_inputFFTElements[ffte.index] = ffte;
 
-                if (x.next != -1)
-                    x = m_inputFFTElements[x.next];
+                if (ffte.next != -1)
+                    ffte = m_inputFFTElements[ffte.next];
 
+            }
+            */
+
+            for (int i = 0; i < pointCount; i++)
+            {
+                ffte = m_inputFFTElements[i];
+
+                ffte.re = m_inputSamples[i];
+                ffte.im = 0.0f;
+
+                m_inputFFTElements[i] = ffte;
             }
 
             for (int stage = 0; stage < FFTLogN; stage++)
@@ -140,17 +153,17 @@ namespace Nebukam.Audio.FrequencyAnalysis
             // Unscramble while copying values from the complex
             // linked list elements to a complex output vector & properly apply scale factors.
 
-            x = m_inputFFTElements[0];
+            ffte = m_inputFFTElements[0];
             bool run = true;
             while (run)
             {
-                m_inputComplexFloatsFull[(int)x.revTgt]
-                    = new ComplexFloat(x.re * FFTScale, x.im * FFTScale);
+                m_inputComplexFloatsFull[(int)ffte.revTgt]
+                    = new ComplexFloat(ffte.re * FFTScale, ffte.im * FFTScale);
 
-                if (x.next == -1)
+                if (ffte.next == -1)
                     run = false;
                 else
-                    x = m_inputFFTElements[x.next];
+                    ffte = m_inputFFTElements[ffte.next];
             }
 
 

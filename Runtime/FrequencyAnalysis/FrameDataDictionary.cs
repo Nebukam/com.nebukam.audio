@@ -1,4 +1,24 @@
-﻿using System;
+﻿// Copyright (c) 2021 Timothé Lapetite - nebukam@gmail.com.
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,10 +33,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class FrameDataDictionary
     {
 
-        protected List<FrequencyFrame> m_frames = new List<FrequencyFrame>();
-        protected Dictionary<FrequencyFrame, Sample> m_dataDic = new Dictionary<FrequencyFrame, Sample>();
+        protected List<SpectrumFrame> m_frames = new List<SpectrumFrame>();
+        protected Dictionary<SpectrumFrame, Sample> m_dataDic = new Dictionary<SpectrumFrame, Sample>();
 
-        public List<FrequencyFrame> frames { get { return m_frames; } }
+        public List<SpectrumFrame> frames { get { return m_frames; } }
 
         public FrameDataDictionary()
         {
@@ -38,7 +58,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// Registers a single FrequencyFrame in this dictionary
         /// </summary>
         /// <param name="frame"></param>
-        public void Add(FrequencyFrame frame)
+        public void Add(SpectrumFrame frame)
         {
             if (m_frames.IndexOf(frame) != -1) { return; }
             m_frames.Add(frame);
@@ -49,7 +69,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// Removes a single FrequencyFrame from this dictionary
         /// </summary>
         /// <param name="frame"></param>
-        public void Remove(FrequencyFrame frame)
+        public void Remove(SpectrumFrame frame)
         {
             int index = m_frames.IndexOf(frame);
             if (index == -1) { return; }
@@ -62,7 +82,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="frame"></param>
         /// <returns></returns>
-        public Sample Get(FrequencyFrame frame)
+        public Sample Get(SpectrumFrame frame)
         {
             Sample result;
 
@@ -82,7 +102,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <param name="frame"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public bool TryGet(FrequencyFrame frame, out float result)
+        public bool TryGet(SpectrumFrame frame, out float result)
         {
             Sample s;
 
@@ -102,7 +122,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <param name="frame"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public bool TryGet(FrequencyFrame frame, out Sample result)
+        public bool TryGet(SpectrumFrame frame, out Sample result)
         {
             return m_dataDic.TryGetValue(frame, out result);
         }
@@ -112,7 +132,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="frame"></param>
         /// <param name="value"></param>
-        public void Set(FrequencyFrame frame, Sample value)
+        public void Set(SpectrumFrame frame, Sample value)
         {
             Sample previousSample;
             if (!m_dataDic.TryGetValue(frame, out previousSample) || !previousSample.ON)
@@ -136,7 +156,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             for (int i = 0; i < m_frames.Count; i++)
             {
-                FrequencyFrame frame = m_frames[i];
+                SpectrumFrame frame = m_frames[i];
                 str += string.Format("[{0}] {1} = {2}\n", frame.name, frame.ID, m_dataDic[frame]);
             }
 

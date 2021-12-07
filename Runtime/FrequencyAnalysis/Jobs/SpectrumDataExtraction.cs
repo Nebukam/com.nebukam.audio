@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2019 Timothé Lapetite - nebukam@gmail.com
+﻿// Copyright (c) 2021 Timothé Lapetite - nebukam@gmail.com.
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,6 @@ using Nebukam.JobAssist;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -30,33 +29,29 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FrequencyFrameReaderJob : IJobParallelFor
+    public class SpectrumDataExtraction : ProcessorGroup
     {
 
-        [ReadOnly]
-        public NativeArray<float> m_inputBand8;
-        [ReadOnly]
-        public NativeArray<float> m_inputBand16;
-        [ReadOnly]
-        public NativeArray<float> m_inputBand32;
-        [ReadOnly]
-        public NativeArray<float> m_inputBand64;
-        [ReadOnly]
-        public NativeArray<float> m_inputBand128;
-        [ReadOnly]
-        public NativeList<FrequencyFrameData> m_inputFrameData;
+        protected FBandsProcessor m_frequencyBandsExtraction;
+        public FBandsProcessor bandsExtraction { get { return m_frequencyBandsExtraction; } }
 
-        public NativeArray<Sample> m_outputFrameSamples;
+        protected FBracketsExtraction m_frequencyBracketsExtraction;
+        public FBracketsExtraction bracketsExtraction { get { return m_frequencyBracketsExtraction; } }
 
-        public void Execute(int index)
+        public SpectrumDataExtraction()
         {
-
-            FrequencyFrameData frame = m_inputFrameData[index];
-            Sample sample = new Sample();
-
-            m_outputFrameSamples[index] = sample;
-
+            Add(ref m_frequencyBandsExtraction);
+            Add(ref m_frequencyBracketsExtraction);
+            m_frequencyBracketsExtraction.chunkSize = 1;
         }
+
+        protected override void InternalLock() { }
+
+        protected override void Prepare(float delta) { }
+
+        protected override void Apply() { }
+
+        protected override void InternalUnlock() { }
 
     }
 }

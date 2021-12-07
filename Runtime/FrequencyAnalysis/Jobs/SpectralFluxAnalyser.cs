@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
@@ -28,52 +27,44 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-
-    public interface ISpectrumModifierJob
+    /// <summary>
+    /// Spectral Flux only works with an AudioClip source.
+    /// </summary>
+    /// <typeparam name="T_SAMPLES_PROVIDER"></typeparam>
+    public class SpectralFluxAnalyser<T_SAMPLES_PROVIDER> : ProcessorChain
+        where T_SAMPLES_PROVIDER : class, ISamplesProvider, new()
     {
+        
+        protected AudioClipSpectrum<T_SAMPLES_PROVIDER> m_audioClipSpectrum;
 
-    }
+        public T_SAMPLES_PROVIDER sampleProvider { get { return m_audioClipSpectrum.channelSamplesProvider; } }
 
-    public interface ISpectrumModifier : IProcessor
-    {
 
-    }
 
-    [BurstCompile]
-    public abstract class AbstractSpectrumModifier<T> : Processor<T>, ISpectrumModifier
-        where T : struct, Unity.Jobs.IJob, ISpectrumModifierJob
-    {
-
-        #region Inputs
-
-        protected bool m_inputsDirty = true;
-
-        protected ISpectrumProvider m_inputSpectrumProvider;
-
-        #endregion
-
-        protected override void InternalLock() { }
-
-        protected override void Prepare(ref T job, float delta)
+        protected override void InternalLock()
         {
-
-            if (m_inputsDirty)
-            {
-
-                if (!TryGetFirstInCompound(out m_inputSpectrumProvider))
-                {
-                    throw new System.Exception("ISpectrumProvider missing");
-                }
-
-                m_inputsDirty = false;
-
-            }
-
+            throw new System.NotImplementedException();
         }
 
-        protected override void InternalUnlock() { }
+        protected override void Prepare(float delta)
+        {
+            throw new System.NotImplementedException();
+        }
 
-        protected override void Apply(ref T job) { }
+        protected override void Apply()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        protected override void InternalUnlock()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        protected override void InternalDispose()
+        {
+            throw new System.NotImplementedException();
+        }
 
     }
 }

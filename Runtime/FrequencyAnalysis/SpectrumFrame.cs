@@ -1,4 +1,24 @@
-﻿using Unity.Mathematics;
+﻿// Copyright (c) 2021 Timothé Lapetite - nebukam@gmail.com.
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+using Unity.Mathematics;
 using static Unity.Mathematics.math;
 using System.Collections.Generic;
 using UnityEngine;
@@ -74,7 +94,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     }
 
-    public struct FrequencyFrameData
+    public struct SpectrumFrameData
     {
         public Bands bands;
         public FrequencyExtraction extraction;
@@ -89,8 +109,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
     }
 
     [System.Serializable]
-    [CreateAssetMenu(fileName = "Frequency Frame", menuName = "N:Toolkit/Audio/Frequency Frame", order = 1)]
-    public class FrequencyFrame : ScriptableObject
+    [CreateAssetMenu(fileName = "Spectrum Frame", menuName = "N:Toolkit/Audio/Spectrum Frame", order = 1)]
+    public class SpectrumFrame : ScriptableObject
     {
 
         public const float maxAmplitude8 = 3.0f;
@@ -145,7 +165,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="data"></param>
         /// <param name="copyID"></param>
-        public void Copy(FrequencyFrameData data)
+        public void Copy(SpectrumFrameData data)
         {
             bands = data.bands;
             output = data.output;
@@ -159,9 +179,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
             outputScale = data.outputScale;
         }
 
-        public static implicit operator FrequencyFrameData(FrequencyFrame value)
+        public static implicit operator SpectrumFrameData(SpectrumFrame value)
         {
-            return new FrequencyFrameData()
+            return new SpectrumFrameData()
             {
                 bands = value.bands,
                 output = value.output,

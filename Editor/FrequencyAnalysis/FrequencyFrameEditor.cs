@@ -1,4 +1,26 @@
-﻿using Nebukam.Audio.FrequencyAnalysis;
+﻿// Copyright (c) 2021 Timothé Lapetite - nebukam@gmail.com.
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#if UNITY_EDITOR
+
+using Nebukam.Audio.FrequencyAnalysis;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -24,13 +46,13 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         Everything = ~0
     }
 
-    [CustomEditor(typeof(FrequencyFrame))]
+    [CustomEditor(typeof(SpectrumFrame))]
     [CanEditMultipleObjects]
     public class FrequencyFrameEditor : UnityEditor.Editor
     {
 
-        internal static Dictionary<FrequencyFrame, Dictionary<FrequencyTable, FrequencyFrameData>> m_cachedModifications
-            = new Dictionary<FrequencyFrame, Dictionary<FrequencyTable, FrequencyFrameData>>();
+        internal static Dictionary<SpectrumFrame, Dictionary<FrequencyTable, SpectrumFrameData>> m_cachedModifications
+            = new Dictionary<SpectrumFrame, Dictionary<FrequencyTable, SpectrumFrameData>>();
 
         public override bool RequiresConstantRepaint() { return true; }
 
@@ -45,11 +67,11 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
             float lH;
 
-            PrintFrequencyFrameEditor(target as FrequencyFrame, out lH);
+            PrintFrequencyFrameEditor(target as SpectrumFrame, out lH);
 
         }
 
-        internal static int PrintFrequencyFrameEditor(FrequencyFrame frame, out float localHeight, FrameEditorVisibility showOptions = FrameEditorVisibility.Everything)
+        internal static int PrintFrequencyFrameEditor(SpectrumFrame frame, out float localHeight, FrameEditorVisibility showOptions = FrameEditorVisibility.Everything)
         {
 
             float _YBefore = Y;
@@ -200,7 +222,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         }
 
-        internal static Rect GetFrameRect(FrequencyFrame f, Rect rel)
+        internal static Rect GetFrameRect(SpectrumFrame f, Rect rel)
         {
             float w = 1f / (int)f.bands;
 
@@ -211,13 +233,13 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 f.amplitude.y * rel.height);
         }
 
-        internal static void WriteCache(FrequencyFrame frame, FrequencyTable table)
+        internal static void WriteCache(SpectrumFrame frame, FrequencyTable table)
         {
-            Dictionary<FrequencyTable, FrequencyFrameData> data;
+            Dictionary<FrequencyTable, SpectrumFrameData> data;
 
             if (!m_cachedModifications.TryGetValue(frame, out data))
             {
-                data = new Dictionary<FrequencyTable, FrequencyFrameData>();
+                data = new Dictionary<FrequencyTable, SpectrumFrameData>();
                 m_cachedModifications[frame] = data;
             }
 
@@ -225,10 +247,10 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         }
 
-        internal static void ReadCache(FrequencyFrame frame, FrequencyTable table)
+        internal static void ReadCache(SpectrumFrame frame, FrequencyTable table)
         {
-            Dictionary<FrequencyTable, FrequencyFrameData> data;
-            FrequencyFrameData frameData;
+            Dictionary<FrequencyTable, SpectrumFrameData> data;
+            SpectrumFrameData frameData;
 
             if (!m_cachedModifications.TryGetValue(frame, out data)
                 || !data.TryGetValue(table, out frameData))
@@ -254,3 +276,4 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
     }
 
 }
+#endif

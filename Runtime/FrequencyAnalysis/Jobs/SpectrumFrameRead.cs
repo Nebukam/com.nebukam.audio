@@ -1,4 +1,24 @@
-﻿using Nebukam.JobAssist;
+﻿// Copyright (c) 2021 Timothé Lapetite - nebukam@gmail.com.
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+using Nebukam.JobAssist;
 using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -10,7 +30,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public class FrequencyFrameReaderProcessor : ParallelProcessor<FrequencyFrameReaderJob>
+    public class SpectrumFrameRead : ParallelProcessor<SpectrumFrameReadJob>
     {
 
 
@@ -27,10 +47,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_inputsDirty = true;
 
-        protected List<FrequencyFrame> m_lockedFrames;
+        protected List<SpectrumFrame> m_lockedFrames;
 
-        protected IFrequencyFrameDataProvider m_inputFrameDataProvider;
-        protected IFrequencyBandProvider m_inputBandsProvider;
+        protected ISpectrumFrameProvider m_inputFrameDataProvider;
+        protected IFBandsProvider m_inputBandsProvider;
 
         #endregion
 
@@ -39,7 +59,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
-        protected override int Prepare(ref FrequencyFrameReaderJob job, float delta)
+        protected override int Prepare(ref SpectrumFrameReadJob job, float delta)
         {
 
             if (m_inputsDirty)
@@ -74,7 +94,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void InternalUnlock() { }
 
-        protected override void Apply(ref FrequencyFrameReaderJob job)
+        protected override void Apply(ref SpectrumFrameReadJob job)
         {
             int frameCount = m_lockedFrames.Count;
             for (int i = 0; i < frameCount; i++)
