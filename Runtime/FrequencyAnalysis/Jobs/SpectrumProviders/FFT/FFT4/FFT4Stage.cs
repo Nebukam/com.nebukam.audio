@@ -32,7 +32,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class FFT4Stage : ParallelProcessor<FFT4StageJob>
     {
 
-        protected NativeSlice<TFactor> m_stageSlice;
         protected int m_stageStartIndex = -1;
 
         public FFTParams fftParams { get; set; }
@@ -43,15 +42,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
 
             int numIterations = fftParams.numBins / 2;
-            int newStageStart = numIterations * compoundIndex;
 
-            if (m_stageStartIndex != newStageStart)
-            {
-                m_stageStartIndex = newStageStart;
-                m_stageSlice = new NativeSlice<TFactor>(inputTwiddleFactors, m_stageStartIndex);
-            }
-
-            job.m_stageSlice = m_stageSlice;
+            job.m_offsetIndex = numIterations * compoundIndex;
+            job.m_inputFactors = inputTwiddleFactors;
             job.m_outputComplexPair = inputComplexPair;
 
             return numIterations;

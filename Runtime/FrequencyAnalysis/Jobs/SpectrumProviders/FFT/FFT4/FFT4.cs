@@ -34,13 +34,23 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class FFT4 : FFTransform
     {
 
-        protected FFT4Preparation m_FFTPreparation;
-        protected FFT4Execution m_FFTExecution;
+        //Preparation
+        protected FFT4PermutationsProvider m_permutations;
+        protected FFT4TwiddleFactorsProvider m_twiddleFactors;
+        //Execution
+        protected FFT4PairsProvider m_complexPairsProvider;
+        protected FFT4StageChain m_DFTStagesProcessor;
+        protected FFT4SpectrumExtraction m_spectrumExtraction;
 
         public FFT4()
         {
-            Add(ref m_FFTPreparation);
-            Add(ref m_FFTExecution);
+            //Preparation
+            Add(ref m_permutations);
+            Add(ref m_twiddleFactors);
+            //Execution
+            Add(ref m_complexPairsProvider);
+            Add(ref m_DFTStagesProcessor);
+            Add(ref m_spectrumExtraction);
         }
 
     }

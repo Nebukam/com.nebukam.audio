@@ -36,15 +36,17 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         [ReadOnly]
-        public NativeSlice<TFactor> m_stageSlice;
+        public NativeArray<TFactor> m_inputFactors;
 
         [NativeDisableParallelForRestriction]
         public NativeArray<float4> m_outputComplexPair;
 
+        public int m_offsetIndex;
+
         public void Execute(int index)
         {
 
-            TFactor factor = m_stageSlice[index];
+            TFactor factor = m_inputFactors[m_offsetIndex + index];
 
             float4 
                 offset = math.float4(-1, 1, -1, 1),
