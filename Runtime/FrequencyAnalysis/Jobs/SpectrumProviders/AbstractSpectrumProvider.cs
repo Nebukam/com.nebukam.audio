@@ -80,6 +80,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void InternalDispose()
         {
+            m_outputPrevSpectrum.Dispose();
             m_outputSpectrum.Dispose();
         }
 

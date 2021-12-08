@@ -42,8 +42,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #endregion
 
-        protected override void InternalLock() { }
-
         protected override int Prepare(ref T job, float delta)
         {
 
@@ -62,10 +60,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             return m_inputSpectrumProvider.outputSpectrum.Length;
 
         }
-
-        protected override void InternalUnlock() { }
-
-        protected override void Apply(ref T job) { }
 
     }
 }

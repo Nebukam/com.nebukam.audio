@@ -79,10 +79,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
-        protected override void InternalUnlock(){ }
-
-        protected override void Apply(ref Unemployed job) { }
-
         protected override void InternalDispose()
         {
             m_outputFrameDataList.Dispose();

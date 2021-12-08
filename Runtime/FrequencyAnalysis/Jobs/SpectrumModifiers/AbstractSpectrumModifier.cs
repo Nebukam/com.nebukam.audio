@@ -52,8 +52,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #endregion
 
-        protected override void InternalLock() { }
-
         protected override void Prepare(ref T job, float delta)
         {
 
@@ -70,8 +68,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
 
         }
-
-        protected override void InternalUnlock() { }
 
         protected override void Apply(ref T job) { }
 

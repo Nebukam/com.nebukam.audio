@@ -19,26 +19,24 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public class AudioClipSpectrum<T_SAMPLES_PROVIDER> : ProcessorChain, ISpectrumProvider
+    public class AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT> : ProcessorChain, ISpectrumProvider
         where T_SAMPLES_PROVIDER : class, ISamplesProvider, new()
+        where T_FFT : class, IFFTransform, new()
     {
 
         protected T_SAMPLES_PROVIDER m_samplesProvider;
         public T_SAMPLES_PROVIDER samplesProvider { get { return m_samplesProvider; } }
 
-        protected FFTProcessor m_FFTProcessor;
-        public IFFT FFTProcessor { get { return m_FFTProcessor; } }
+        protected T_FFT m_FFTransform;
+        public IFFTransform FFTProcessor { get { return m_FFTransform; } }
         
         public AudioClip audioClip
         {
@@ -54,8 +52,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public Nebukam.Audio.FrequencyAnalysis.FFTWindow window
         {
-            get { return m_FFTProcessor.window; }
-            set { m_FFTProcessor.window = value; }
+            get { return m_FFTransform.window; }
+            set { m_FFTransform.window = value; }
         }
 
         #region ISpectrumProvider
@@ -74,19 +72,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public AudioClipSpectrum()
         {
             Add(ref m_samplesProvider);
-            Add(ref m_FFTProcessor);
+            Add(ref m_FFTransform);
         }
-
-
-        protected override void InternalLock() { }
-
-        protected override void Prepare(float delta) { }
-
-        protected override void Apply() { }
-
-        protected override void InternalUnlock() { }
-
-        protected override void InternalDispose() { }
 
     }
 }

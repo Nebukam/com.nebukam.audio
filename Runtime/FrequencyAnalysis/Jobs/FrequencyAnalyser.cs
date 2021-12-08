@@ -61,22 +61,5 @@ namespace Nebukam.Audio.FrequencyAnalysis
             Add(ref m_spectrumAnalysis);
         }
 
-        protected override void InternalLock() { }
-
-        protected override void Prepare(float delta)
-        {
-
-
-        }
-
-        protected override void Apply() 
-        {
-        
-        }
-
-        protected override void InternalUnlock() { }
-
-        protected override void InternalDispose() { }
-
     }
 }

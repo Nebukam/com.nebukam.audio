@@ -123,20 +123,5 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
-        protected override void Prepare(float delta) 
-        {
-
-        }
-
-        protected override void Apply() 
-        {
-        
-            // Go through each dictionaries frames
-
-
-        }
-
-        protected override void InternalUnlock() { }
-
     }
 }

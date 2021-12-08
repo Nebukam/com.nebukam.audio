@@ -31,8 +31,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
     /// Spectral Flux only works with an AudioClip source.
     /// </summary>
     /// <typeparam name="T_SAMPLES_PROVIDER"></typeparam>
-    public class FrequencyAnalyserBulk<T_SAMPLES_PROVIDER> : ProcessorGroup
+    public class FrequencyAnalyserBulk<T_SAMPLES_PROVIDER, T_FFT> : ProcessorGroup
         where T_SAMPLES_PROVIDER : class, ISamplesProvider, new()
+        where T_FFT : class, IFFTransform, new()
     {
 
         protected int m_lockedBulkSize = 0;
@@ -52,20 +53,20 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public void Add(FrameDataDictionary frameDataDict)
         {
-            FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER>> proc = null;
+            FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>> proc = null;
             for (int i = 0, n = Count; i < n; i++)
             {
-                proc = this[i] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER>>;
+                proc = this[i] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>>;
                 proc.Add(frameDataDict);
             }
         }
 
         public void Remove(FrameDataDictionary frameDataDict)
         {
-            FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER>> proc = null;
+            FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>> proc = null;
             for (int i = 0, n = Count; i < n; i++)
             {
-                proc = this[i] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER>>;
+                proc = this[i] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>>;
                 proc.Remove(frameDataDict);
             }
         }
@@ -82,7 +83,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             m_lockedBulkSize = bulkSize;
 
             int diff = m_lockedBulkSize - oldBulkSize;
-            FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER>> proc = null;
+            FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>> proc = null;
 
             if (diff > 0)
             {
@@ -97,7 +98,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 diff = math.abs(diff);
                 for (int i = 0; i < diff; i++)
                 {
-                    proc = this[Count - 1] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER>>;
+                    proc = this[Count - 1] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>>;
                     Remove(proc);
                     proc.DisposeAll();
                 }
@@ -105,33 +106,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             for (int i = 0, n = Count; i < n; i++)
             {
-                proc = this[i] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER>>;
+                proc = this[i] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>>;
                 proc.spectrumProvider.time = m_lockedTime;
                 proc.spectrumProvider.audioClip = m_lockedAudioClip;
                 proc.spectrumProvider.frequencyBins = m_lockedFrequencyBins;
                 proc.spectrumProvider.FFTProcessor.window = m_lockedWindow;
             }
 
-        }
-
-        protected override void Prepare(float delta)
-        {
-
-        }
-
-        protected override void Apply()
-        {
-            
-        }
-
-        protected override void InternalUnlock()
-        {
-            
-        }
-
-        protected override void InternalDispose()
-        {
-            
         }
 
     }

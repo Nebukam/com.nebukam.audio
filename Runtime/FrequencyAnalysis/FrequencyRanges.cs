@@ -283,15 +283,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
                 }
 
-                //Debug.Log("Band " + (b + 1) + "/" + numBands + " -> " + bands[b].width + "Hz ----------");
-
             }
-
-            float total = 0f;
-            for (int i = 0; i < numBands; i++)
-                total += bands[i].width;
-
-            //Debug.LogError("---> "+ total);
 
             //////////
 
@@ -304,6 +296,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 BandInfos band;
 
                 int iterationRemainder = (int)bin;
+                int covered = 0;
                 float binSize = math.floor((float)m_maxHz / (float)iterationRemainder);
 
                 string str = "";
@@ -313,10 +306,15 @@ namespace Nebukam.Audio.FrequencyAnalysis
                     band = bands[i];
                     int iterationCount = (int)math.max(math.floor((float)band.width / binSize), 1f);
                     iterationCount = math.min(iterationRemainder, iterationCount);
+
+                    band.Start(bin, covered);
                     band.Length(bin, iterationCount);
-                    str += ", " + iterationCount;
+
+                    covered += iterationCount;
                     iterationRemainder -= iterationCount;
+
                     bands[i] = band;
+                    
                 }
 
                 if(iterationRemainder != 0)
@@ -326,15 +324,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                     bands[numBands-1] = band;
                 }
 
-                int ttl = 0;
-                for (int i = 0; i < numBands; i++)
-                    ttl += bands[i].Length(bin);
-
-                //Debug.Log(str + " = "+ttl+"("+ iterationRemainder + ")");
-
             }
-
-            //Debug.Log(m_maxHz);
 
             return bands;
 

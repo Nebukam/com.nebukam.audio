@@ -54,11 +54,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #endregion
 
-        protected override void InternalLock()
-        {
-
-        }
-
         protected override int Prepare(ref SpectrumFrameReadJob job, float delta)
         {
 
@@ -91,8 +86,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             return frameCount;
 
         }
-
-        protected override void InternalUnlock() { }
 
         protected override void Apply(ref SpectrumFrameReadJob job)
         {

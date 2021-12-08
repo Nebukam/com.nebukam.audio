@@ -49,11 +49,20 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public FBandsProcessor()
         {
-            Add(ref m_band8);
+            Add(ref m_band8); 
+            m_band8.chunkSize = 8;
+            
             Add(ref m_band16);
+            m_band16.chunkSize = 8;
+
             Add(ref m_band32);
+            m_band32.chunkSize = 8;
+
             Add(ref m_band64);
+            m_band64.chunkSize = 8;
+
             Add(ref m_band128);
+            m_band128.chunkSize = 8;
         }
 
         public FBandExtraction Get(Bands bands)
@@ -112,14 +121,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 band.table = m_frequencyTableProvider.table;
             }
         }
-
-        protected override void Prepare(float delta) { }
-
-        protected override void Apply() { }
-
-        protected override void InternalUnlock() { }
-
-        protected override void InternalDispose() { }
 
     }
 }

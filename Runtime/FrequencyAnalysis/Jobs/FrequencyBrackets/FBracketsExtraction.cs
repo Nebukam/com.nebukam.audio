@@ -71,13 +71,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
-        protected override void Apply(ref FBracketsExtractionJob job)
-        {
-            
-        }
-
-        protected override void InternalUnlock() { }
-
         protected override void InternalDispose() 
         {
             m_outputBrackets.Dispose();

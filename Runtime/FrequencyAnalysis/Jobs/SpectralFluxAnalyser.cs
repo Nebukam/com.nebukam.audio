@@ -31,40 +31,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
     /// Spectral Flux only works with an AudioClip source.
     /// </summary>
     /// <typeparam name="T_SAMPLES_PROVIDER"></typeparam>
-    public class SpectralFluxAnalyser<T_SAMPLES_PROVIDER> : ProcessorChain
+    public class SpectralFluxAnalyser<T_SAMPLES_PROVIDER, T_FFT_PROCESSOR> : ProcessorChain
         where T_SAMPLES_PROVIDER : class, ISamplesProvider, new()
+        where T_FFT_PROCESSOR : class, IFFTransform, new()
     {
         
-        protected AudioClipSpectrum<T_SAMPLES_PROVIDER> m_audioClipSpectrum;
+        protected AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT_PROCESSOR> m_audioClipSpectrum;
 
         public T_SAMPLES_PROVIDER sampleProvider { get { return m_audioClipSpectrum.samplesProvider; } }
-
-
-
-        protected override void InternalLock()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        protected override void Prepare(float delta)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        protected override void Apply()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        protected override void InternalUnlock()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        protected override void InternalDispose()
-        {
-            throw new System.NotImplementedException();
-        }
 
     }
 }

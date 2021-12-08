@@ -51,18 +51,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public float normalizedCoverage;
         public float linearCoverageEnd;
 
-        public int start256;
-        public int start512;
-        public int start1024;
-        public int start2048;
-        public int start4096;
-
-        public int length256;
-        public int length512;
-        public int length1024;
-        public int length2048;
-        public int length4096;
-
         public FrequencyRange(int hz)
         {
 
@@ -95,6 +83,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
             return 0;
         }
 
+        #region start values
+
+        public int start256;
+        public int start512;
+        public int start1024;
+        public int start2048;
+        public int start4096;
+
         public int Start(Bins bins)
         {
             if (bins == Bins.length256) return start256;
@@ -114,42 +110,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (bins == Bins.length4096) { start4096 = length; }
         }
 
-        public int Length(int bins)
-        {
-            if (bins == 256) return length256;
-            if (bins == 512) return length512;
-            if (bins == 1024) return length1024;
-            if (bins == 2048) return length2048;
-            if (bins == 4096) return length4096;
-            return 0;
-        }
+        #endregion
 
-        public int Length(Bins bins)
-        {
-            if (bins == Bins.length256) return length256;
-            if (bins == Bins.length512) return length512;
-            if (bins == Bins.length1024) return length1024;
-            if (bins == Bins.length2048) return length2048;
-            if (bins == Bins.length4096) return length4096;
-            return 0;
-        }
-
-        public void Length(Bins bins, int length)
-        {
-            if (bins == Bins.length256) { length256 = length; }
-            if (bins == Bins.length512) { length512 = length; }
-            if (bins == Bins.length1024) { length1024 = length; }
-            if (bins == Bins.length2048) { length2048 = length; }
-            if (bins == Bins.length4096) { length4096 = length; }
-        }
-
-    }
-
-    public struct BandInfos
-    {
-
-        public float normalizedIndex;
-        public float width; // Width of the band in Hz
+        #region length values
 
         public int length256;
         public int length512;
@@ -185,6 +148,94 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (bins == Bins.length2048) { length2048 = length; }
             if (bins == Bins.length4096) { length4096 = length; }
         }
+
+        #endregion
+
+    }
+
+    public struct BandInfos
+    {
+
+        public float normalizedIndex;
+        public float width; // Width of the band in Hz
+
+        #region start values
+
+        public int start256;
+        public int start512;
+        public int start1024;
+        public int start2048;
+        public int start4096;
+
+        public int Start(int bins)
+        {
+            if (bins == 256) return start256;
+            if (bins == 512) return start512;
+            if (bins == 1024) return start1024;
+            if (bins == 2048) return start2048;
+            if (bins == 4096) return start4096;
+            return 0;
+        }
+
+        public int Start(Bins bins)
+        {
+            if (bins == Bins.length256) return start256;
+            if (bins == Bins.length512) return start512;
+            if (bins == Bins.length1024) return start1024;
+            if (bins == Bins.length2048) return start2048;
+            if (bins == Bins.length4096) return start4096;
+            return 0;
+        }
+
+        public void Start(Bins bins, int length)
+        {
+            if (bins == Bins.length256) { start256 = length; }
+            if (bins == Bins.length512) { start512 = length; }
+            if (bins == Bins.length1024) { start1024 = length; }
+            if (bins == Bins.length2048) { start2048 = length; }
+            if (bins == Bins.length4096) { start4096 = length; }
+        }
+
+        #endregion
+
+        #region length values
+
+        public int length256;
+        public int length512;
+        public int length1024;
+        public int length2048;
+        public int length4096;
+
+        public int Length(int bins)
+        {
+            if (bins == 256) return length256;
+            if (bins == 512) return length512;
+            if (bins == 1024) return length1024;
+            if (bins == 2048) return length2048;
+            if (bins == 4096) return length4096;
+            return 0;
+        }
+
+        public int Length(Bins bins)
+        {
+            if (bins == Bins.length256) return length256;
+            if (bins == Bins.length512) return length512;
+            if (bins == Bins.length1024) return length1024;
+            if (bins == Bins.length2048) return length2048;
+            if (bins == Bins.length4096) return length4096;
+            return 0;
+        }
+
+        public void Length(Bins bins, int length)
+        {
+            if (bins == Bins.length256) { length256 = length; }
+            if (bins == Bins.length512) { length512 = length; }
+            if (bins == Bins.length1024) { length1024 = length; }
+            if (bins == Bins.length2048) { length2048 = length; }
+            if (bins == Bins.length4096) { length4096 = length; }
+        }
+
+        #endregion
 
     }
 
@@ -577,11 +628,12 @@ namespace Nebukam.Audio.FrequencyAnalysis
             {
                 BandInfos band;
 
-                int 
+                int
+                    covered = 0,
                     maxIterations = 0,
                     iterationRemainder = (int)bin;
 
-                float 
+                float
                     binSize = math.floor((float)maxHz / (float)iterationRemainder);
 
                 for (int i = 0; i < numBands; i++)
@@ -596,10 +648,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
                         iterationCount = (int)((float)band.width / binSize);
 
                     iterationCount = math.min(iterationRemainder, iterationCount);
+
                     band.Length(bin, iterationCount);
-                    
+                    band.Start(bin, covered);
+
                     iterationRemainder -= iterationCount;
+                    covered += iterationCount;
                     m_bandInfos[i] = band;
+
                     maxIterations = math.max(maxIterations, iterationCount);
 
                 }

@@ -131,11 +131,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
-        protected override void Apply(ref T job)
-        {
-
-        }
-
         protected override void InternalUnlock()
         {
             m_lockedAudioClip = null;
@@ -145,6 +140,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             m_multiChannelSamples = null;
 
+            m_outputPrevSpectrum.Dispose();
             m_outputSpectrum.Dispose();
             m_outputMultiChannelSamples.Dispose();
             m_outputSamples.Dispose();

@@ -30,7 +30,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FBandExtractionJob : IJob
+    public struct FBandExtractionJob : IJobParallelFor
     {
 
         [ReadOnly]
@@ -43,7 +43,30 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public NativeArray<float> m_outputBands;
 
-        public void Execute()
+        public void Execute(int index)
+        {
+
+            BandInfos infos = m_inputBandInfos[index];
+
+            int
+                bins = m_inputSpectrum.Length,
+                count = infos.Start(bins);
+
+            float average = 0;
+
+            for (int s = 0, n = infos.Length(bins); s < n; s++)
+            {
+                average += m_inputSpectrum[count] * (count + 1);
+                count++;
+            }
+
+            average /= count;
+            m_outputBands[index] = average;
+
+
+        }
+
+        /*public void Execute()
         {
 
             int
@@ -66,7 +89,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-        }
+        }*/
 
     }
 }

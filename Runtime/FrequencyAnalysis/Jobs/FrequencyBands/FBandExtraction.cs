@@ -28,7 +28,7 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public class FBandExtraction : Processor<FBandExtractionJob>
+    public class FBandExtraction : ParallelProcessor<FBandExtractionJob>
     {
 
         protected NativeArray<float> m_outputBands = new NativeArray<float>(0, Allocator.Persistent);
@@ -62,19 +62,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
-        protected override void Prepare(ref FBandExtractionJob job, float delta)
+        protected override int Prepare(ref FBandExtractionJob job, float delta)
         {
             job.m_inputBandInfos = m_bandInfos;
             job.m_outputBands = m_outputBands;
             job.m_inputSpectrum = spectrumProvider.outputSpectrum;
+            return m_bandInfos.Length;
         }
-
-        protected override void Apply(ref FBandExtractionJob job)
-        {
-            
-        }
-
-        protected override void InternalUnlock() { }
 
         protected override void InternalDispose() 
         {

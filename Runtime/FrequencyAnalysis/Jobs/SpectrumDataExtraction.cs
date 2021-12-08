@@ -45,13 +45,5 @@ namespace Nebukam.Audio.FrequencyAnalysis
             m_frequencyBracketsExtraction.chunkSize = 1;
         }
 
-        protected override void InternalLock() { }
-
-        protected override void Prepare(float delta) { }
-
-        protected override void Apply() { }
-
-        protected override void InternalUnlock() { }
-
     }
 }
