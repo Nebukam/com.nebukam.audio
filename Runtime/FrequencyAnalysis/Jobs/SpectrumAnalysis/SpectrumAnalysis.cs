@@ -34,7 +34,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected bool m_recompute = true;
 
         protected List<FrequencyTable> m_lockedTables = new List<FrequencyTable>();
-        protected Dictionary<FrequencyTable, FrequencyTableProcessor> m_tableProcessingChains = new Dictionary<FrequencyTable, FrequencyTableProcessor>();
+        protected Dictionary<FrequencyTable, SpectrumPostProcessor> m_tableProcessingChains = new Dictionary<FrequencyTable, SpectrumPostProcessor>();
 
         protected List<FrameDataDictionary> m_dataDictionaries = new List<FrameDataDictionary>();
         
@@ -67,7 +67,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected void LockFrame(SpectrumFrame frame)
         {
 
-            FrequencyTableProcessor tableProcessor;
+            SpectrumPostProcessor tableProcessor;
             FrequencyTable table = frame.table;
 
             if (!m_tableProcessingChains.TryGetValue(table, out tableProcessor))
@@ -76,7 +76,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 if (tableLockIndex > m_childs.Count - 1) // Create new chain
                     Add(ref tableProcessor);
                 else // Re-use existing chain
-                    tableProcessor = m_childs[tableLockIndex] as FrequencyTableProcessor;
+                    tableProcessor = m_childs[tableLockIndex] as SpectrumPostProcessor;
 
                 tableProcessor.table = table;
 

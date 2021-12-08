@@ -34,6 +34,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected NativeArray<float> m_outputBands = new NativeArray<float>(0, Allocator.Persistent);
         public NativeArray<float> outputBands { get { return m_outputBands; } }
 
+        protected float[] m_cachedOutput = new float[0];
+        public float[] cachedOutput { get { return m_cachedOutput; } }
+
         protected NativeArray<BandInfos> m_bandInfos = new NativeArray<BandInfos>(0, Allocator.Persistent);
         public NativeArray<BandInfos> bandInfos { get { return m_bandInfos; } }
 
@@ -49,13 +52,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
 
             m_lockedBands = frequencyBands;
-            int numBins = (int)m_lockedBands;
+            int numBands = (int)m_lockedBands;
 
             bool forceTableUpdate = m_lockedTable != table;
             m_lockedTable = table;
 
-            MakeLength(ref m_outputBands, numBins);
-            bool u = !MakeLength(ref m_bandInfos, numBins);
+            MakeLength(ref m_outputBands, numBands);
+            MakeLength(ref m_cachedOutput, numBands);
+            bool u = !MakeLength(ref m_bandInfos, numBands);
 
             if (u || forceTableUpdate)
                 Copy(m_lockedTable.GetBandInfos(m_lockedBands), ref m_bandInfos);
@@ -68,6 +72,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
             job.m_outputBands = m_outputBands;
             job.m_inputSpectrum = spectrumProvider.outputSpectrum;
             return m_bandInfos.Length;
+        }
+
+        protected override void Apply(ref FBandExtractionJob job)
+        {
+            Copy(m_outputBands, ref m_cachedOutput);
         }
 
         protected override void InternalDispose() 

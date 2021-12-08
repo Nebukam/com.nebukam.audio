@@ -28,7 +28,7 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public class FrequencyTableProcessor : ProcessorChain
+    public class SpectrumPostProcessor : ProcessorChain
     {
 
         // - Table index set
@@ -47,7 +47,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public SpectrumDataExtraction spectrumDataExtraction { get { return m_spectrumDataExtraction; } }
 
 
-        public FrequencyTableProcessor()
+        public SpectrumPostProcessor()
         {
             Add(ref m_frequencyTableProvider);
             Add(ref m_spectrumDataExtraction);

@@ -34,6 +34,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected NativeArray<BracketData> m_outputBrackets = new NativeArray<BracketData>(0, Allocator.Persistent);
         public NativeArray<BracketData> outputBrackets { get { return m_outputBrackets; } }
 
+        protected BracketData[] m_cachedOutput = new BracketData[0];
+        public BracketData[] cachedOutput { get { return m_cachedOutput; } }
+
         #region Inputs
 
         protected bool m_inputsDirty = true;
@@ -62,6 +65,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             int numRanges = ranges.Length;
 
             MakeLength(ref m_outputBrackets, numRanges);
+            MakeLength(ref m_cachedOutput, numRanges);
 
             job.m_inputSpectrum = m_inputSpectrumProvider.outputSpectrum;
             job.m_inputRanges = ranges;
@@ -69,6 +73,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             return numRanges;
 
+        }
+
+        protected override void Apply(ref FBracketsExtractionJob job)
+        {
+            Copy(m_outputBrackets, ref m_cachedOutput);
         }
 
         protected override void InternalDispose() 
