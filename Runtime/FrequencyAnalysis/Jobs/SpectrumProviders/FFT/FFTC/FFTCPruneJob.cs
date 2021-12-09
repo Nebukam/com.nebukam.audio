@@ -32,35 +32,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FFT4SpectrumExtractionJob : IJobParallelFor
+    public struct FFTCPruneJob : IJob
     {
 
         [ReadOnly]
         public NativeArray<float> m_params;
 
-        [ReadOnly] 
-        public NativeArray<float4> m_inputComplexPair;
+        public NativeArray<ComplexFloat> m_outputComplexFloats;
+        public NativeArray<ComplexFloat> m_inputComplexFloatsFull;
 
-        [WriteOnly]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float> m_outputSpectrum;
-
-        public float m_scaleFactor;
-
-        public void Execute(int index)
+        public void Execute()
         {
 
-            var x = m_inputComplexPair[index];
+            int numBins = (int)m_params[FFTParams.NUM_BINS];
+            NativeArray<ComplexFloat>.Copy(m_inputComplexFloatsFull, m_outputComplexFloats, numBins);
 
-            int
-                firstIndex = index * 2,
-                secondIndex = firstIndex + 1;
+            // DC and Fs/2 Points are scaled differently, since they have only a real part
+            m_outputComplexFloats[0] = new ComplexFloat(m_outputComplexFloats[0].real / sqrt(2));
+            m_outputComplexFloats[numBins - 1] = new ComplexFloat(m_outputComplexFloats[numBins - 1].real / sqrt(2));
 
-            float
-                scale = m_scaleFactor * 1.971f; // Match FFTC Scale
-
-            m_outputSpectrum[firstIndex] = length(x.xy) * scale;
-            m_outputSpectrum[secondIndex] = length(x.zw) * scale;
         }
 
     }

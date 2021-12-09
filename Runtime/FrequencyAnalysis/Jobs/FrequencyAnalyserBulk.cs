@@ -57,7 +57,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             for (int i = 0, n = Count; i < n; i++)
             {
                 proc = this[i] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>>;
-                proc.Add(frameDataDict);
+                //proc.Add(frameDataDict);
             }
         }
 
@@ -67,7 +67,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             for (int i = 0, n = Count; i < n; i++)
             {
                 proc = this[i] as FrequencyAnalyser<AudioClipSpectrum<T_SAMPLES_PROVIDER, T_FFT>>;
-                proc.Remove(frameDataDict);
+                //proc.Remove(frameDataDict);
             }
         }
 

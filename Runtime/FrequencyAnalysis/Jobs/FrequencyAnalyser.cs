@@ -27,7 +27,16 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public class FrequencyAnalyser<T_SPECTRUM_PROVIDER> : ProcessorChain
+    public interface IFrequencyAnalyser : ISpectrumAnalysis
+    {
+
+        SpectrumModifierChain modifiers { get; }
+
+        ISpectrumAnalysis spectrumAnalysis { get; }
+
+    }
+
+    public class FrequencyAnalyser<T_SPECTRUM_PROVIDER> : ProcessorChain, IFrequencyAnalyser
         where T_SPECTRUM_PROVIDER : class, ISpectrumProvider, new()
     {
 
@@ -37,20 +46,32 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected SpectrumModifierChain m_modifiers;
         public SpectrumModifierChain modifiers { get { return m_modifiers; } }
 
-        #region Analysis distribution
-
         protected SpectrumAnalysis m_spectrumAnalysis;
-        public SpectrumAnalysis distribution { get { return m_spectrumAnalysis; } }
+        public ISpectrumAnalysis spectrumAnalysis { get { return m_spectrumAnalysis; } }
 
-        public void Add(FrameDataDictionary frameDataDict)
-        {
-            m_spectrumAnalysis.Add(frameDataDict);
-        }
+        #region ISpectrumAnalysis
 
-        public void Remove(FrameDataDictionary frameDataDict)
-        {
-            m_spectrumAnalysis.Remove(frameDataDict);
-        }
+        // Frequency tables
+
+        public bool Add(FrequencyTable table) 
+        { return m_spectrumAnalysis.Add(table); }
+
+        public bool Remove(FrequencyTable table) 
+        { return m_spectrumAnalysis.Remove(table); }
+
+        public IFrequencyTableProcessor this[FrequencyTable table] 
+        { get { return m_spectrumAnalysis[table]; } }
+
+        public bool TryGetTableProcessor(FrequencyTable table, out IFrequencyTableProcessor processor)
+        { return m_spectrumAnalysis.TryGetTableProcessor(table, out processor); }
+
+        // FrameData Dictionaries
+
+        public bool Add(FrameDataDictionary dictionary)
+        { return m_spectrumAnalysis.Add(dictionary); }
+
+        public bool Remove(FrameDataDictionary dictionary)
+        { return m_spectrumAnalysis.Remove(dictionary); }
 
         #endregion
 

@@ -53,37 +53,24 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             int
                 FFTLogN = (int)m_params[FFTParams.LOG_N],
-                pointCount = (int)m_params[FFTParams.NUM_POINTS],
-                numFlies = pointCount >> 1,
+                numSamples = (int)m_params[FFTParams.NUM_SAMPLES],
+                numFlies = numSamples >> 1,
                 span = (int)numFlies,
-                spacing = pointCount,
+                spacing = numSamples,
                 wIndexStep = 1;
 
             float
-                FFTScale = sqrt(2) / (float)pointCount, // Natural FFT Scale Factor
                 TAU_INV = -2.0f * PI;
-
-            // Copy data into linked complex number objects
-            FFTCElement ffte = m_inputFFTElements[0];
-            for (int i = 0; i < pointCount; i++)
-            {
-                ffte = m_inputFFTElements[i];
-
-                ffte.re = m_inputSamples[i];
-                ffte.im = 0.0f;
-
-                m_inputFFTElements[i] = ffte;
-            }
 
             for (int stage = 0; stage < FFTLogN; stage++)
             {
 
                 float 
-                    wAngleInc = wIndexStep * TAU_INV / (float)pointCount,
+                    wAngleInc = wIndexStep * TAU_INV / (float)numSamples,
                     wMulRe = cos(wAngleInc),
                     wMulIm = sin(wAngleInc);
 
-                for (int start = 0; start < pointCount; start += spacing)
+                for (int start = 0; start < numSamples; start += spacing)
                 {
 
                     FFTCElement 
@@ -134,31 +121,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 wIndexStep <<= 1;     // Multiply by 2 by left shift
 
             }
-
-            // The algorithm leaves the result in a scrambled order.
-            // Unscramble while copying values from the complex
-            // linked list elements to a complex output vector & properly apply scale factors.
-
-            ffte = m_inputFFTElements[0];
-            bool run = true;
-            while (run)
-            {
-                m_inputComplexFloatsFull[(int)ffte.revIndex]
-                    = new ComplexFloat(ffte.re * FFTScale, ffte.im * FFTScale);
-
-                if (ffte.next == -1)
-                    run = false;
-                else
-                    ffte = m_inputFFTElements[ffte.next];
-            }
-
-
-            int mLengthHalf = m_outputComplexFloats.Length;
-            NativeArray<ComplexFloat>.Copy(m_inputComplexFloatsFull, m_outputComplexFloats, mLengthHalf);
-
-            // DC and Fs/2 Points are scaled differently, since they have only a real part
-            m_outputComplexFloats[0] = new ComplexFloat(m_outputComplexFloats[0].real / sqrt(2));
-            m_outputComplexFloats[mLengthHalf - 1] = new ComplexFloat(m_outputComplexFloats[mLengthHalf - 1].real / sqrt(2));
 
         }
 

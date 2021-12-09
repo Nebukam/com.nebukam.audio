@@ -35,7 +35,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         FBandExtraction Get(Bands bands);
     }
 
-    public class FBandsProcessor : ProcessorGroup
+    public class FBandsProcessor : ProcessorGroup, IFBandsProvider
     {
 
         public Bands frequencyBands { get; set; } = Bands.band8;
@@ -117,7 +117,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             for(int i = 0, n = Count; i < n; i++)
             {
                 FBandExtraction band = m_childs[i] as FBandExtraction;
-                band.frequencyBands = (Bands)FrequencyTable.__bandTypes.GetValue(i);
+                band.frequencyBands = FrequencyTable.__bandTypes[i];
                 band.table = m_frequencyTableProvider.table;
             }
         }

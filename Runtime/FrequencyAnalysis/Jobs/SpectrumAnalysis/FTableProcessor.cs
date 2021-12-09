@@ -19,48 +19,45 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
+using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
-using Unity.Jobs;
 using Unity.Mathematics;
-using static Unity.Mathematics.math;
 using UnityEngine;
-using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    [BurstCompile]
-    public struct FFT4SpectrumExtractionJob : IJobParallelFor
+    public interface IFrequencyTableProcessor
+    {
+        FrequencyTable table { get; set; }
+        FBandsProcessor bandsExtraction { get; }
+        FBracketsExtraction bracketsExtraction { get; }
+    }
+
+    public class FTableProcessor : ProcessorChain, IFrequencyTableProcessor
     {
 
-        [ReadOnly]
-        public NativeArray<float> m_params;
+        protected FTableProvider m_frequencyTableProvider;
+        
+        protected FTableDataExtraction m_spectrumDataExtraction;
+        public FTableDataExtraction spectrumDataExtraction { get { return m_spectrumDataExtraction; } }
 
-        [ReadOnly] 
-        public NativeArray<float4> m_inputComplexPair;
-
-        [WriteOnly]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float> m_outputSpectrum;
-
-        public float m_scaleFactor;
-
-        public void Execute(int index)
+        public FrequencyTable table
         {
+            get { return m_frequencyTableProvider.table; }
+            set { m_frequencyTableProvider.table = value; }
+        }
 
-            var x = m_inputComplexPair[index];
+        public FBandsProcessor bandsExtraction { get { return m_spectrumDataExtraction.bandsExtraction; } }
 
-            int
-                firstIndex = index * 2,
-                secondIndex = firstIndex + 1;
+        public FBracketsExtraction bracketsExtraction { get { return m_spectrumDataExtraction.bracketsExtraction; } }
 
-            float
-                scale = m_scaleFactor * 1.971f; // Match FFTC Scale
-
-            m_outputSpectrum[firstIndex] = length(x.xy) * scale;
-            m_outputSpectrum[secondIndex] = length(x.zw) * scale;
+        public FTableProcessor()
+        {
+            Add(ref m_frequencyTableProvider);
+            Add(ref m_spectrumDataExtraction);
         }
 
     }

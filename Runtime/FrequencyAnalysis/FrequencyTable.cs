@@ -333,11 +333,17 @@ namespace Nebukam.Audio.FrequencyAnalysis
         internal static NativeList<FrequencyTableData> globalFrequencyTableDataList;
         internal static NativeList<FrequencyRange> globalFrequencyRangeInline;
 
-        internal static Array __bandTypes = Enum.GetValues(typeof(Bands));
-        internal static Array __binsTypes = Enum.GetValues(typeof(Bins));
+        internal static Bands[] __bandTypes;
+        internal static Bins[] __binsTypes;
 
         internal static int m_maxHz = 20000;
         public static int maxHz { get { return m_maxHz; } }
+
+        static FrequencyTable()
+        {
+            __bandTypes = new Bands[] { Bands.band8, Bands.band16, Bands.band32, Bands.band64, Bands.band128 };
+            __binsTypes = new Bins[] { Bins.length512, Bins.length1024, Bins.length2048, Bins.length4096 };
+        }
 
         #endregion
 
@@ -353,12 +359,17 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public BandInfosPair GetBandInfosPair(Bands bands)
         {
-            return m_bandInfos[Array.IndexOf(__bandTypes, bands)];
+            if (bands == Bands.band8) return m_bandInfos[0];
+            if (bands == Bands.band16) return m_bandInfos[1];
+            if (bands == Bands.band32) return m_bandInfos[2];
+            if (bands == Bands.band64) return m_bandInfos[3];
+            if (bands == Bands.band128) return m_bandInfos[4];
+            return null;
         }
 
         public BandInfos[] GetBandInfos(Bands bands)
         {
-            return m_bandInfos[Array.IndexOf(__bandTypes, bands)].bandInfos;
+            return GetBandInfosPair(bands).bandInfos;
         }
 
         public void BuildTable()

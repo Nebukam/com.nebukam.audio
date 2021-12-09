@@ -1,3 +1,23 @@
+// Copyright (c) 2021 Timothé Lapetite - nebukam@gmail.com.
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,14 +25,15 @@ using Nebukam.Audio.FrequencyAnalysis;
 using Nebukam.Audio;
 using Unity.Collections;
 
-public class AudioClipAnalysisExample : MonoBehaviour
+public class AudioClipAnalysisBulkExample : MonoBehaviour
 {
 
-    protected FrequencyAnalyser<AudioClipSpectrum<SingleChannel>> m_frequencyAnalyser;
+    protected FrequencyAnalyserBulk<SingleChannel, FFTC> m_frequencyAnalyser;
     protected FrameDataDictionary m_frameDataDictionary;
 
-    public FrequencyFrame Frame;
+    public SpectrumFrame Frame;
     public AudioClip Clip;
+    public int BulkSize = 20;
     public Bins FrequencyBins = Bins.length1024;
     public float Time = 1f;
 
@@ -36,7 +57,7 @@ public class AudioClipAnalysisExample : MonoBehaviour
         // allowing "in advance" analysis.
         //
 
-        m_frequencyAnalyser = new FrequencyAnalyser<AudioClipSpectrum<SingleChannel>>();
+        m_frequencyAnalyser = new FrequencyAnalyserBulk<SingleChannel, FFTC>();
 
         //
         // Next, create a FrameDataDictionary.
@@ -70,9 +91,10 @@ public class AudioClipAnalysisExample : MonoBehaviour
         // But it can be changed anytime.
         //
 
-        m_frequencyAnalyser.spectrumProvider.audioClip = Clip;
-        m_frequencyAnalyser.spectrumProvider.time = Time;
-        m_frequencyAnalyser.spectrumProvider.frequencyBins = FrequencyBins;
+        m_frequencyAnalyser.bulkSize = BulkSize;
+        m_frequencyAnalyser.audioClip = Clip;
+        m_frequencyAnalyser.time = Time;
+        m_frequencyAnalyser.frequencyBins = FrequencyBins;
 
         //
         // The frequency analyser is running on Unity's job system
@@ -93,7 +115,7 @@ public class AudioClipAnalysisExample : MonoBehaviour
             Sample sample = m_frameDataDictionary.Get(Frame);
 
             //Debug.Log(sample.average);
-            DrawBands();
+            //DrawBands();
 
             // Make sure to schedule it again : if complete, it couldn't
             // be scheduled through the last call.
@@ -109,7 +131,7 @@ public class AudioClipAnalysisExample : MonoBehaviour
 
 
     }
-
+    /*
     private float windowWidth = 10f;
     private float windowSpacing = -1f;
     private Color col = Color.red;
@@ -177,8 +199,8 @@ public class AudioClipAnalysisExample : MonoBehaviour
             if (tableProcessor == null) { continue; }
 
             FrequencyTable table = tableProcessor.table;
-            FrequencyBandsProcessor bandsExt = tableProcessor.spectrumDataPostProcessor.bandsExtraction;
-            FrequencyBracketsProcessor bracketExt = tableProcessor.spectrumDataPostProcessor.bracketsExtraction;
+            FBandsProcessor bandsExt = tableProcessor.spectrumDataExtraction.bandsExtraction;
+            FBracketsExtraction bracketExt = tableProcessor.spectrumDataExtraction.bracketsExtraction;
 
             float z = windowIndex * windowSpacing;
             float inc = windowSpacing / 6f;
@@ -221,6 +243,7 @@ public class AudioClipAnalysisExample : MonoBehaviour
         }
     }
 
+    */
     private void OnDisable()
     {
         //

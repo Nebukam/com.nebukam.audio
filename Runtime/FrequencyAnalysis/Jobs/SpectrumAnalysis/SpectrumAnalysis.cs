@@ -28,97 +28,191 @@ using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public class SpectrumAnalysis : ProcessorGroup
+
+    public interface ISpectrumAnalysis : IProcessorGroup
+    {
+        /// <summary>
+        /// Adds a table reference to the spectrum analysis
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns>true if the table wasn't registered yet and has been added, falsle if the table was already registered</returns>
+        bool Add(FrequencyTable table);
+
+        /// <summary>
+        /// Removes a table reference from the Spectrum analysis
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns>true if the table was registered and has been removed, false if the table wasn't registered</returns>
+        bool Remove(FrequencyTable table);
+
+        IFrequencyTableProcessor this[FrequencyTable table] { get; }
+
+        bool TryGetTableProcessor(FrequencyTable table, out IFrequencyTableProcessor processor);
+
+    }
+
+    /// <summary>
+    /// A SpectrumAnalysis object takes one or more FrequencyTable as inputs and process spectrum data
+    /// according to each of the tables
+    /// </summary>
+    public class SpectrumAnalysis : ProcessorGroup, ISpectrumAnalysis
     {
 
         protected bool m_recompute = true;
 
+        #region Frequency Table management
+
         protected List<FrequencyTable> m_lockedTables = new List<FrequencyTable>();
-        protected Dictionary<FrequencyTable, SpectrumPostProcessor> m_tableProcessingChains = new Dictionary<FrequencyTable, SpectrumPostProcessor>();
+        protected List<FrequencyTable> m_tables = new List<FrequencyTable>();
+        protected Dictionary<FrequencyTable, IFrequencyTableProcessor> m_tableProcessors = new Dictionary<FrequencyTable, IFrequencyTableProcessor>();
 
-        protected List<FrameDataDictionary> m_dataDictionaries = new List<FrameDataDictionary>();
-        
-
-        public void Add(FrameDataDictionary frameDataDict)
+        /// <summary>
+        /// Adds a table reference to the spectrum analysis
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns>true if the table wasn't registered yet and has been added, false if the table was already registered</returns>
+        public bool Add(FrequencyTable table)
         {
-            if (m_dataDictionaries.Contains(frameDataDict)) { return; }
+            
+            if (m_tables.Contains(table)) { return false; }
 
-            m_dataDictionaries.Add(frameDataDict);
+            m_tables.Add(table);
             m_recompute = true;
+            return true;
+
         }
 
-        public void Remove(FrameDataDictionary frameDataDict)
+        /// <summary>
+        /// Removes a table reference from the Spectrum analysis
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns>true if the table was registered and has been removed, false if the table wasn't registered</returns>
+        public bool Remove(FrequencyTable table)
         {
-            int index = m_dataDictionaries.IndexOf(frameDataDict);
+            
+            int index = m_tables.IndexOf(table);
 
-            if (index == -1) { return; }
+            if (index == -1) { return false; }
+            m_tables.RemoveAt(index);
+            m_recompute = true;
+            return true;
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns></returns>
+        public IFrequencyTableProcessor this[FrequencyTable table] { 
+            get
+            {
+                IFrequencyTableProcessor proc;
+                if (m_tableProcessors.TryGetValue(table, out proc))
+                    return proc;
+                else
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="processor"></param>
+        /// <returns></returns>
+        public bool TryGetTableProcessor(FrequencyTable table, out IFrequencyTableProcessor processor)
+        {
+            return m_tableProcessors.TryGetValue(table, out processor);
+        }
+
+        #endregion
+
+        #region Frame Data Dictionary management
+
+        protected List<FrameDataDictionary> m_lockedFrameDataDictionary = new List<FrameDataDictionary>();
+        protected List<FrameDataDictionary> m_dataDictionaries = new List<FrameDataDictionary>();
+        //protected Dictionary<FrequencyTable, List<FrameDataDictionary>> m_
+
+        /// <summary>
+        /// Adds a FrameDataDictionary reference to the spectrum analysis, as well
+        /// as any FrequencyTable this data dictionary frames requires.
+        /// </summary>
+        /// <param name="frameDictionary"></param>
+        /// <returns>true if the table wasn't registered yet and has been added, false if the table was already registered</returns>
+        public bool Add(FrameDataDictionary frameDictionary)
+        {
+
+            if (m_dataDictionaries.Contains(frameDictionary)) { return false; }
+
+            m_dataDictionaries.Add(frameDictionary);
+            
+            for(int i = 0, n = frameDictionary.frames.Count; i < n; i++)
+                Add(frameDictionary.frames[i].table);
+            
+            m_recompute = true;
+            return true;
+
+        }
+
+        /// <summary>
+        /// Removes a FrameDataDictionary from the Spectrum analysis.
+        /// Notes that it doesn't remove FrequencyTable dependencies added through Add(frameDictionary).
+        /// </summary>
+        /// <param name="frameDictionary"></param>
+        /// <returns>true if the table was registered and has been removed, false if the table wasn't registered</returns>
+        public bool Remove(FrameDataDictionary frameDictionary)
+        {
+
+            int index = m_dataDictionaries.IndexOf(frameDictionary);
+
+            if (index == -1) { return false; }
             m_dataDictionaries.RemoveAt(index);
             m_recompute = true;
+            return true;
+
         }
-
-        #region Inputs
-
 
 
         #endregion
 
-        protected int tableLockIndex = 0;
-
-        protected void LockFrame(SpectrumFrame frame)
-        {
-
-            SpectrumPostProcessor tableProcessor;
-            FrequencyTable table = frame.table;
-
-            if (!m_tableProcessingChains.TryGetValue(table, out tableProcessor))
-            {
-
-                if (tableLockIndex > m_childs.Count - 1) // Create new chain
-                    Add(ref tableProcessor);
-                else // Re-use existing chain
-                    tableProcessor = m_childs[tableLockIndex] as SpectrumPostProcessor;
-
-                tableProcessor.table = table;
-
-                m_tableProcessingChains[table] = tableProcessor;
-                m_lockedTables.Add(table);                
-
-                tableLockIndex++;
-
-            }
-
-        }
-
         protected override void InternalLock()
         {
 
-            if (m_recompute)
+            if (!m_recompute) { return; }
+
+            int tableCount = 0;
+
+            m_lockedTables.Clear();
+            m_tableProcessors.Clear();
+
+            for (int i = 0, n = m_tables.Count; i < n; i++)
             {
 
-                tableLockIndex = 0;
+                FrequencyTable table = m_tables[i];
+                FTableProcessor tableProcessor = null;
 
-                m_lockedTables.Clear();
-                m_tableProcessingChains.Clear();
+                m_lockedTables.Add(table);
 
-                for (int i = 0, ni = m_dataDictionaries.Count; i < ni; i++)
-                {
+                if (i <= Count - 1)
+                    tableProcessor = m_childs[i] as FTableProcessor;
+                else
+                    Add(ref tableProcessor);
 
-                    List<SpectrumFrame> frames = m_dataDictionaries[i].frames;
+                m_tableProcessors[table] = tableProcessor;
+                tableProcessor.table = table;
+                tableCount++;
 
-                    for(int f = 0, nf = frames.Count; f < nf; f++)
-                        LockFrame(frames[f]);
+            }
 
-                }
+            // Flush uneeded processors
 
-                // Flush uneeded processors
+            int childCount = Count;
 
-                int n = m_childs.Count;
-                if (tableLockIndex > n - 1)
-                {
-                    for (int i = tableLockIndex; i < n; i++)
-                        Remove(m_childs[tableLockIndex]).Dispose();
-                }
-
+            if (tableCount < childCount)
+            {
+                for (int i = tableCount; i < childCount; i++)
+                    Remove(m_childs[tableCount]).Dispose();
             }
 
         }

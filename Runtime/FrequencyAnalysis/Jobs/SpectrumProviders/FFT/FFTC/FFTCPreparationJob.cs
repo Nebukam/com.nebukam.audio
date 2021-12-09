@@ -53,7 +53,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (!m_recompute) { return; }
 
             
-            int pointCount = (int)m_params[FFTParams.NUM_POINTS];
+            int pointCount = (int)m_params[FFTParams.NUM_SAMPLES];
             uint FFTLogN = (uint)m_params[FFTParams.LOG_N];
 
             FFTCElement e;

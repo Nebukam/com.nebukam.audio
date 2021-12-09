@@ -22,27 +22,35 @@ using Nebukam.JobAssist;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
+using Unity.Jobs;
 using Unity.Mathematics;
+using static Unity.Mathematics.math;
 using UnityEngine;
+using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public class SpectrumDataExtraction : ProcessorGroup
+    public struct FFTCPushJob : IJobParallelFor
     {
 
-        protected FBandsProcessor m_frequencyBandsExtraction;
-        public FBandsProcessor bandsExtraction { get { return m_frequencyBandsExtraction; } }
+        public NativeArray<FFTCElement> m_inputFFTElements;
 
-        protected FBracketsExtraction m_frequencyBracketsExtraction;
-        public FBracketsExtraction bracketsExtraction { get { return m_frequencyBracketsExtraction; } }
+        [ReadOnly]
+        public NativeArray<float> m_inputSamples;
 
-        public SpectrumDataExtraction()
+        public void Execute(int index)
         {
-            Add(ref m_frequencyBandsExtraction);
-            Add(ref m_frequencyBracketsExtraction);
-            m_frequencyBracketsExtraction.chunkSize = 1;
+
+            FFTCElement ffte = m_inputFFTElements[index];
+
+            ffte = m_inputFFTElements[index];
+            ffte.re = m_inputSamples[index];
+            ffte.im = 0.0f;
+
+            m_inputFFTElements[index] = ffte;
+
         }
 
     }

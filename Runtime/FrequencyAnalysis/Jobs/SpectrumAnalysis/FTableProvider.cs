@@ -36,7 +36,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     }
 
     [BurstCompile]
-    public class FrequencyTableProvider : Processor<Unemployed>, IFTableProvider
+    public class FTableProvider : Processor<Unemployed>, IFTableProvider
     {
 
         protected bool m_recompute = true;

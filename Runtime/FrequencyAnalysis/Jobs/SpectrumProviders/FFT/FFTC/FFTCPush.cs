@@ -22,46 +22,50 @@ using Nebukam.JobAssist;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
-using Unity.Jobs;
 using Unity.Mathematics;
-using static Unity.Mathematics.math;
 using UnityEngine;
-using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-
+    
     [BurstCompile]
-    public struct FFT4SpectrumExtractionJob : IJobParallelFor
+    public class FFTCPush : ParallelProcessor<FFTCPushJob>
     {
 
-        [ReadOnly]
-        public NativeArray<float> m_params;
+        #region Inputs
 
-        [ReadOnly] 
-        public NativeArray<float4> m_inputComplexPair;
+        protected bool m_inputsDirty = true;
 
-        [WriteOnly]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float> m_outputSpectrum;
+        protected FFTParams m_FFTParams;
+        protected internal ISamplesProvider m_inputSamplesProvider;
+        protected internal FFTCPreparation m_inputFFTPreparation = null;
 
-        public float m_scaleFactor;
+        #endregion
 
-        public void Execute(int index)
+        protected override int Prepare(ref FFTCPushJob job, float delta)
         {
 
-            var x = m_inputComplexPair[index];
+            if (m_inputsDirty)
+            {
 
-            int
-                firstIndex = index * 2,
-                secondIndex = firstIndex + 1;
+                if (!TryGetFirstInCompound(out m_FFTParams)
+                    || !TryGetFirstInCompound(out m_inputSamplesProvider, true)
+                    || !TryGetFirstInCompound(out m_inputFFTPreparation, true))
+                {
+                    throw new System.Exception("ISamplesProvider or FFTPreparation missing.");
+                }
 
-            float
-                scale = m_scaleFactor * 1.971f; // Match FFTC Scale
+                m_inputsDirty = false;
 
-            m_outputSpectrum[firstIndex] = length(x.xy) * scale;
-            m_outputSpectrum[secondIndex] = length(x.zw) * scale;
+            }
+
+            job.m_inputFFTElements = m_inputFFTPreparation.outputFFTElements;
+            job.m_inputSamples = m_inputSamplesProvider.outputSamples;
+
+            return m_FFTParams.numSamples;
+
         }
 
     }
+
 }

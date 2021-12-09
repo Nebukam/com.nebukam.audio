@@ -53,7 +53,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             /// Calculates a set of Windows coefficients for a given number of points and a window type to use.
 
-            int count = (int)m_params[FFTParams.NUM_POINTS];
+            int count = (int)m_params[FFTParams.NUM_SAMPLES];
 
             switch (m_windowType)
             {

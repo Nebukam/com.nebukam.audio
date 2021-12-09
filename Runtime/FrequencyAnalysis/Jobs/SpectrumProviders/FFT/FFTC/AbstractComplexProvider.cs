@@ -66,9 +66,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            int spectrumLength = (int)m_samplesProvider.frequencyBins;
-
-            MakeLength(ref m_outputComplexFloats, spectrumLength);
+            MakeLength(ref m_outputComplexFloats, m_samplesProvider.numBins);
 
             job.complexFloats = m_outputComplexFloats;
 
@@ -111,12 +109,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            int spectrumLength = (int)m_inputSpectrumProvider.frequencyBins;
-
-            MakeLength(ref m_complexFloats, spectrumLength);
+            MakeLength(ref m_complexFloats, m_inputSpectrumProvider.numBins);
             job.complexFloats = m_complexFloats;
 
-            return spectrumLength;
+            return m_inputSpectrumProvider.numBins;
         }
 
         protected override void InternalDispose()

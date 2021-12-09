@@ -64,7 +64,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             job.m_params = m_FFTParams.outputParams;
             job.m_inputComplexPair = m_complexPairsProvider.outputComplexPair;
-            job.m_scaleFactor = 2.0f / m_FFTParams.numPoints;
+            job.m_scaleFactor = 2.0f / m_FFTParams.numSamples;
             job.m_outputSpectrum = m_spectrumProvider.outputSpectrum;
 
             return m_FFTParams.numBins/2;

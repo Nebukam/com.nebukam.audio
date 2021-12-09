@@ -35,14 +35,20 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         protected FFTCPreparation m_FFTPreparation;
+        protected FFTCPush m_FFTPush;
         protected FFTCExecution m_FFTExecution;
+        protected FFTCUnscramble m_FFTUnscramble;
+        protected FFTCPrune m_FFTPrune;
         protected FFTCMagnitudePass m_FFTMagnitudePass;
 
         public FFTC() 
             : base()
         {
             Add(ref m_FFTPreparation);
+            Add(ref m_FFTPush);
             Add(ref m_FFTExecution);
+            Add(ref m_FFTUnscramble);
+            Add(ref m_FFTPrune);
             Add(ref m_FFTMagnitudePass);
         }
 

@@ -4,7 +4,8 @@
         "Unity.Burst",
         "Unity.Mathematics",
         "Unity.Collections",
-        "Nebukam.JobAssist"
+        "Nebukam.JobAssist",
+        "Nebukam.Common"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -2,6 +2,7 @@
     "name": "Nebukam.Audio.Editor",
     "references": [
         "Nebukam.Editor",
+        "Nebukam.Common",
         "Unity.Mathematics",
         "Nebukam.Audio"
     ],

@@ -32,6 +32,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public interface ISpectrumProvider : IProcessor
     {
         Bins frequencyBins { get; set; }
+        int numBins { get; }
+        int numSamples { get; }
+
         NativeArray<float> outputPrevSpectrum { get; }
         NativeArray<float> outputSpectrum { get; }
     }
@@ -51,7 +54,23 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public int channel { get; set; } = 0;
 
-        public Bins frequencyBins { get; set; } = Bins.length512;
+        protected Bins m_frequencyBins = Bins.length512;
+        protected int m_numBins = 512;
+        protected int m_numPoints = 1024;
+
+        public Bins frequencyBins
+        {
+            get { return m_frequencyBins; }
+            set
+            {
+                m_frequencyBins = value;
+                m_numBins = (int)m_frequencyBins;
+                m_numPoints = m_numBins * 2;
+            }
+        }
+
+        public int numBins { get { return m_numBins; } }
+        public int numSamples { get { return m_numPoints; } }
 
         protected UnityEngine.FFTWindow m_FFTWindowType = UnityEngine.FFTWindow.Hanning;
         public UnityEngine.FFTWindow FFTWindowType
@@ -65,11 +84,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void Prepare(ref T job, float delta)
         {
 
-            int numBins = (int)frequencyBins;
-
             if (m_rawSpectrum == null 
-                || m_rawSpectrum.Length != numBins)
-                m_rawSpectrum = new float[numBins];
+                || m_rawSpectrum.Length != m_numBins)
+                m_rawSpectrum = new float[m_numBins];
 
             FetchSpectrumData();
 

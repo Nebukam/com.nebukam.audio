@@ -52,7 +52,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             int 
                 twiddleIndex = 0,
-                pointCount = (int)m_params[FFTParams.NUM_POINTS];
+                pointCount = (int)m_params[FFTParams.NUM_SAMPLES];
 
             for (int m = 4; m <= pointCount; m <<= 1)
             {

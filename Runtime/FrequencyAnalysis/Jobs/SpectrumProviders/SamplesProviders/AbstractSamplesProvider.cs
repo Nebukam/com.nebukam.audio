@@ -61,7 +61,21 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected NativeArray<float> m_outputSpectrum = new NativeArray<float>(0, Allocator.Persistent);
         public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
 
-        public Bins frequencyBins { get; set; } = Bins.length512;
+        protected Bins m_frequencyBins = Bins.length512;
+        protected int m_numBins = 512;
+        protected int m_numSamples = 1024;
+
+        public Bins frequencyBins {
+            get { return m_frequencyBins; }
+            set { 
+                m_frequencyBins = value;
+                m_numBins = (int)m_frequencyBins;
+                m_numSamples = m_numBins * 2;
+            } 
+        }
+
+        public int numBins { get { return m_numBins; } }
+        public int numSamples { get { return m_numSamples; } }
 
         #endregion
 
@@ -106,18 +120,16 @@ namespace Nebukam.Audio.FrequencyAnalysis
             m_offsetSamples = (int)((float)m_audioClip.frequency * m_time);
 
             int numChannels = m_audioClip.channels;
-            int pointCount = (int)frequencyBins * 2 * numChannels;
+            int multiChannelPointCount = m_numSamples * numChannels;
 
             if (m_multiChannelSamples == null
-                || m_multiChannelSamples.Length != pointCount)
-                m_multiChannelSamples = new float[pointCount];
+                || m_multiChannelSamples.Length != multiChannelPointCount)
+                m_multiChannelSamples = new float[multiChannelPointCount];
 
-            m_lockedAudioClip.GetData(m_multiChannelSamples, math.clamp(m_offsetSamples, 0, m_audioClip.samples - pointCount));
+            m_lockedAudioClip.GetData(m_multiChannelSamples, math.clamp(m_offsetSamples, 0, m_audioClip.samples - multiChannelPointCount));
 
-            int numBins = (int)frequencyBins;
-
-            MakeLength(ref m_outputSpectrum, numBins);
-            MakeLength(ref m_outputSamples, numBins * 2);
+            MakeLength(ref m_outputSpectrum, m_numBins);
+            MakeLength(ref m_outputSamples, m_numSamples);
             Copy(m_multiChannelSamples, ref m_outputMultiChannelSamples);
             Copy(m_outputSpectrum, ref m_outputPrevSpectrum);
 

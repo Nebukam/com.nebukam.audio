@@ -19,38 +19,40 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Burst;
+using Unity.Jobs;
 using Unity.Mathematics;
+using static Unity.Mathematics.math;
 using UnityEngine;
+using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public class SpectrumPostProcessor : ProcessorChain
+
+    [BurstCompile]
+    public struct FFTCUnscrambleJob : IJobParallelFor
     {
 
-        // - Table index set
-        // - Bands & Brackets
-        // - Frame reading
+        [ReadOnly]
+        public NativeArray<float> m_params;
 
-        public FrequencyTable table
+        [WriteOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<ComplexFloat> m_inputComplexFloatsFull;
+
+        [ReadOnly]
+        public NativeArray<FFTCElement> m_inputFFTElements;
+
+        public void Execute(int index)
         {
-            get { return m_frequencyTableProvider.table; }
-            set { m_frequencyTableProvider.table = value; }
-        }
 
-        protected FrequencyTableProvider m_frequencyTableProvider;
-        
-        protected SpectrumDataExtraction m_spectrumDataExtraction;
-        public SpectrumDataExtraction spectrumDataExtraction { get { return m_spectrumDataExtraction; } }
+            float FFTScale = m_params[FFTParams.NATURAL_SCALE];
 
+            FFTCElement ffte = m_inputFFTElements[index];
+            m_inputComplexFloatsFull[(int)ffte.revIndex] = new ComplexFloat(ffte.re * FFTScale, ffte.im * FFTScale);
 
-        public SpectrumPostProcessor()
-        {
-            Add(ref m_frequencyTableProvider);
-            Add(ref m_spectrumDataExtraction);
         }
 
     }

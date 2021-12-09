@@ -16,17 +16,17 @@ MonoBehaviour:
   table: {fileID: 11400000, guid: ee456edf02c19e34983669b9d80338d0, type: 2}
   bands: 32
   output: 2
-  extraction: 0
+  extraction: 1
   tolerance: 0
   frequenciesBand:
-    x: 0
-    y: 32
+    x: 8
+    y: 4
   frequenciesBracket:
     x: 2
     y: 1
   frequenciesRaw:
-    x: 4066
-    y: 2426
+    x: 0
+    y: 730
   amplitude:
     x: 0
     y: 1

@@ -65,31 +65,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
 
         }
-
-        /*public void Execute()
-        {
-
-            int
-                bandCount = m_outputBands.Length,
-                bins = m_inputSpectrum.Length,
-                index = 0;
-
-            for (int i = 0; i < bandCount; i++)
-            {
-                float average = 0;
-
-                for (int s = 0, n = m_inputBandInfos[i].Length(bins); s < n; s++)
-                {
-                    average += m_inputSpectrum[index] * (index + 1);
-                    index++;
-                }
-
-                average /= index;
-                m_outputBands[i] = average;
-
-            }
-
-        }*/
-
+        
     }
 }

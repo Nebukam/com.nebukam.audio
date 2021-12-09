@@ -74,7 +74,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            m_recompute = !MakeLength(ref m_outputCoefficients, m_inputParams.numPoints);
+            m_recompute = !MakeLength(ref m_outputCoefficients, m_inputParams.numSamples);
 
             job.m_recompute = m_recompute;
             job.m_params = m_inputParams.outputParams;
