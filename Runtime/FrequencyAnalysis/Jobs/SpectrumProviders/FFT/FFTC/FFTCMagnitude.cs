@@ -19,17 +19,14 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public class FFTCMagnitudePass : ParallelProcessor<FFTCMagnitudeJob>
+    public class FFTCMagnitude : ParallelProcessor<FFTCMagnitudeJob>
     {
 
         #region Inputs
@@ -60,11 +57,32 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
 
             job.m_params = m_inputParams.outputParams;
-            job.complexFloats = m_inputComplexProvider.outputComplexFloats;
+            job.m_inputComplexSpectrum = m_inputComplexProvider.outputComplexSpectrum;
             job.m_outputSpectrum = m_inputSpectrumProvider.outputSpectrum;
 
             return m_inputSpectrumProvider.outputSpectrum.Length;
 
         }
+    }
+
+    [BurstCompile]
+    public struct FFTCMagnitudeJob : Unity.Jobs.IJobParallelFor
+    {
+
+        [ReadOnly]
+        public NativeArray<float> m_params;
+
+        [ReadOnly]
+        public NativeArray<ComplexFloat> m_inputComplexSpectrum;
+
+        public NativeArray<float> m_outputSpectrum;
+
+        public float m_inputScaleFactor;
+
+        public void Execute(int index)
+        {
+            m_outputSpectrum[index] = (m_inputComplexSpectrum[index].magnitude * m_params[FFTParams.SCALE_FACTOR]);
+        }
+
     }
 }

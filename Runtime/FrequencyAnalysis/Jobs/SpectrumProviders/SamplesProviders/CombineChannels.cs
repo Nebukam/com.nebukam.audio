@@ -18,13 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -36,7 +32,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class CombineChannels : AbstractSamplesProvider<CombineChannelsJob>, ISamplesProvider
     {
 
-        protected NativeArray<int> m_inputChannels = new NativeArray<int>(0, Allocator.Persistent);
+        protected NativeArray<int> m_inputChannels = default;
 
         protected int[] m_channels = new int[0];
         public int[] channels

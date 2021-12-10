@@ -18,31 +18,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public class FTableDataExtraction : ProcessorGroup
+    public struct ReadBracketsJob : IJobParallelFor, IFrameReadJob
     {
 
-        protected FBandsProcessor m_frequencyBandsExtraction;
-        public FBandsProcessor bandsExtraction { get { return m_frequencyBandsExtraction; } }
+        [ReadOnly]
+        private NativeArray<float> m_FFTparams;
+        public NativeArray<float> inputParams { set { m_FFTparams = value; } }
 
-        protected FBracketsExtraction m_frequencyBracketsExtraction;
-        public FBracketsExtraction bracketsExtraction { get { return m_frequencyBracketsExtraction; } }
+        [ReadOnly]
+        private NativeArray<SpectrumFrameData> m_inputFrameData;
+        public NativeArray<SpectrumFrameData> inputFrameData { set { m_inputFrameData = value; } }
 
-        public FTableDataExtraction()
+        [WriteOnly]
+        [NativeDisableContainerSafetyRestriction]
+        private NativeArray<Sample> m_outputFrameSamples;
+        public NativeArray<Sample> outputFrameSamples { set { m_outputFrameSamples = value; } }
+
+        [ReadOnly]
+        public NativeArray<BracketData> m_inputBrackets;
+
+        public void Execute(int index)
         {
-            Add(ref m_frequencyBandsExtraction);
-            Add(ref m_frequencyBracketsExtraction);
-            m_frequencyBracketsExtraction.chunkSize = 1;
+            SpectrumFrameData currentFrame = m_inputFrameData[index];
+            if (currentFrame.extraction != FrequencyExtraction.Bracket) { return; }
         }
 
     }

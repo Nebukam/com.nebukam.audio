@@ -18,41 +18,46 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FFTCUnscrambleJob : IJobParallelFor
+    public struct ReadBandsJob : IJobParallelFor, IFrameReadJob
     {
 
         [ReadOnly]
-        public NativeArray<float> m_params;
-
-        [WriteOnly]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<ComplexFloat> m_inputComplexFloatsFull;
+        private NativeArray<float> m_FFTparams;
+        public NativeArray<float> inputParams { set { m_FFTparams = value; } }
 
         [ReadOnly]
-        public NativeArray<FFTCElement> m_inputFFTElements;
+        private NativeArray<SpectrumFrameData> m_inputFrameData;
+        public NativeArray<SpectrumFrameData> inputFrameData { set { m_inputFrameData = value; } }
+
+        [WriteOnly]
+        [NativeDisableContainerSafetyRestriction]
+        private NativeArray<Sample> m_outputFrameSamples;
+        public NativeArray<Sample> outputFrameSamples { set { m_outputFrameSamples = value; } }
+
+        [ReadOnly]
+        public NativeArray<float> m_inputBands8;
+        [ReadOnly]
+        public NativeArray<float> m_inputBands16;
+        [ReadOnly]
+        public NativeArray<float> m_inputBands32;
+        [ReadOnly]
+        public NativeArray<float> m_inputBands64;
+        [ReadOnly]
+        public NativeArray<float> m_inputBands128;
 
         public void Execute(int index)
         {
-
-            float FFTScale = m_params[FFTParams.NATURAL_SCALE];
-
-            FFTCElement ffte = m_inputFFTElements[index];
-            m_inputComplexFloatsFull[(int)ffte.revIndex] = new ComplexFloat(ffte.re * FFTScale, ffte.im * FFTScale);
-
+            SpectrumFrameData currentFrame = m_inputFrameData[index];
+            if(currentFrame.extraction != FrequencyExtraction.Bands) { return; }
         }
 
     }

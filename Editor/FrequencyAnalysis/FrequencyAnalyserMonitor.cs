@@ -49,7 +49,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             window.Refresh();
         }
 
-        public static void ShowWindow(FrequencyFrameList frameList)
+        public static void ShowWindow(SpectrumFrameList frameList)
         {
             ShowWindow();
         }

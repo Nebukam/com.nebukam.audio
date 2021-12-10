@@ -19,16 +19,14 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
+
     public class FFT4Stage : ParallelProcessor<FFT4StageJob>
     {
 
@@ -48,6 +46,40 @@ namespace Nebukam.Audio.FrequencyAnalysis
             job.m_outputComplexPair = inputComplexPair;
 
             return numIterations;
+
+        }
+
+    }
+
+    [BurstCompile]
+    public struct FFT4StageJob : IJobParallelFor
+    {
+
+        [ReadOnly]
+        public NativeArray<TFactor> m_inputFactors;
+
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float4> m_outputComplexPair;
+
+        public int m_offsetIndex;
+
+        public void Execute(int index)
+        {
+
+            TFactor factor = m_inputFactors[m_offsetIndex + index];
+
+            float4
+                offset = math.float4(-1, 1, -1, 1),
+                t = factor.pair,
+                oddCx = m_outputComplexPair[factor.odd],
+                evenCx = m_outputComplexPair[factor.even];
+
+
+            float4 tRe = t.xxzz * evenCx.xyzw + offset * t.yyww * evenCx.yxwz;
+
+
+            m_outputComplexPair[factor.odd] = oddCx + tRe;
+            m_outputComplexPair[factor.even] = oddCx - tRe;
 
         }
 

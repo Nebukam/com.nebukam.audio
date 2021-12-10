@@ -21,18 +21,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using Unity.Mathematics;
 using Unity.Burst;
-using Unity.Jobs;
-using Unity.Collections;
+using Unity.Mathematics;
+using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-   
+
 
     [BurstCompile]
     internal static class FrequencyRanges

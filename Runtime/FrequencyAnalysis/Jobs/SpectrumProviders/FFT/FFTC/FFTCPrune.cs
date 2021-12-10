@@ -19,15 +19,13 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
+using static Unity.Mathematics.math;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    
+
     [BurstCompile]
     public class FFTCPrune : Processor<FFTCPruneJob>
     {
@@ -60,8 +58,32 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
 
             job.m_params = m_FFTParams.outputParams;
-            job.m_inputComplexFloatsFull = m_inputFFTPreparation.outputComplexFloatsFull;
-            job.m_outputComplexFloats = m_inputFFTPreparation.outputComplexFloats;
+            job.m_inputComplexFloatsFull = m_inputFFTPreparation.outputComplexSamples;
+            job.m_outputComplexFloats = m_inputFFTPreparation.outputComplexSpectrum;
+
+        }
+
+    }
+
+    [BurstCompile]
+    public struct FFTCPruneJob : Unity.Jobs.IJob
+    {
+
+        [ReadOnly]
+        public NativeArray<float> m_params;
+
+        public NativeArray<ComplexFloat> m_outputComplexFloats;
+        public NativeArray<ComplexFloat> m_inputComplexFloatsFull;
+
+        public void Execute()
+        {
+
+            int numBins = (int)m_params[FFTParams.NUM_BINS];
+            NativeArray<ComplexFloat>.Copy(m_inputComplexFloatsFull, m_outputComplexFloats, numBins);
+
+            // DC and Fs/2 Points are scaled differently, since they have only a real part
+            m_outputComplexFloats[0] = new ComplexFloat(m_outputComplexFloats[0].real / sqrt(2));
+            m_outputComplexFloats[numBins - 1] = new ComplexFloat(m_outputComplexFloats[numBins - 1].real / sqrt(2));
 
         }
 

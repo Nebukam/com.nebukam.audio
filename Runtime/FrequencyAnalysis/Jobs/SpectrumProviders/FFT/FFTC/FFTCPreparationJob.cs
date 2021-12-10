@@ -18,55 +18,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Jobs;
-using Unity.Mathematics;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FFTCPreparationJob : IJob, IComplexJob
+    public struct FFTCPreparationJob : IJobParallelFor
     {
 
         public bool m_recompute;
 
-        [ReadOnly]
-        public NativeArray<float> m_params;
-
-        [ReadOnly]
-        private NativeArray<ComplexFloat> m_outputComplexFloats;
-        public NativeArray<ComplexFloat> complexFloats { set { m_outputComplexFloats = value; } }
-
-        [ReadOnly]
-        public NativeArray<float> m_inputSamples;
+        public int numSamples;
+        public uint FFTLogN;
 
         public NativeArray<FFTCElement> m_outputFFTElements;
 
-        public void Execute()
+        public void Execute(int index)
         {
 
             if (!m_recompute) { return; }
 
-            
-            int pointCount = (int)m_params[FFTParams.NUM_SAMPLES];
-            uint FFTLogN = (uint)m_params[FFTParams.LOG_N];
-
             FFTCElement e;
-            for (int i = 0; i < pointCount; i++)
-            {
-                e = m_outputFFTElements[i];
+            e = m_outputFFTElements[index];
 
-                e.index = i;
-                e.next = i == pointCount - 1 ? -1 : i + 1; // Set up "next" pointers.
-                e.revIndex = BitReverse((uint)i, FFTLogN); // Specify target for bit reversal re-ordering.
+            e.index = index;
+            e.next = index == numSamples - 1 ? -1 : index + 1; // Set up "next" pointers.
+            e.revIndex = BitReverse((uint)index, FFTLogN); // Specify target for bit reversal re-ordering.
 
-                m_outputFFTElements[i] = e;
-            }
+            m_outputFFTElements[index] = e;
 
         }
 

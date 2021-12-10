@@ -36,7 +36,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         [Header("Data")]
         [Tooltip("FrequencyFrameList to visualize")]
-        public FrequencyFrameList FrameList;
+        public SpectrumFrameList FrameList;
 
         [Header("Debug")]
         [Tooltip("Whether to draw debug or not")]

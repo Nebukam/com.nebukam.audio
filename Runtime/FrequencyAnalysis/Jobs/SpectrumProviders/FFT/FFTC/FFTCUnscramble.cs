@@ -19,15 +19,12 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    
+
     [BurstCompile]
     public class FFTCUnscramble : ParallelProcessor<FFTCUnscrambleJob>
     {
@@ -58,10 +55,36 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
 
             job.m_params = m_FFTParams.outputParams;
-            job.m_inputComplexFloatsFull = m_inputFFTPreparation.outputComplexFloatsFull;
+            job.m_inputComplexFloatsFull = m_inputFFTPreparation.outputComplexSamples;
             job.m_inputFFTElements = m_inputFFTPreparation.outputFFTElements;
 
             return m_FFTParams.numSamples;
+
+        }
+
+    }
+
+    [BurstCompile]
+    public struct FFTCUnscrambleJob : Unity.Jobs.IJobParallelFor
+    {
+
+        [ReadOnly]
+        public NativeArray<float> m_params;
+
+        [WriteOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<ComplexFloat> m_inputComplexFloatsFull;
+
+        [ReadOnly]
+        public NativeArray<FFTCElement> m_inputFFTElements;
+
+        public void Execute(int index)
+        {
+
+            float FFTScale = m_params[FFTParams.NATURAL_SCALE];
+
+            FFTCElement ffte = m_inputFFTElements[index];
+            m_inputComplexFloatsFull[(int)ffte.revIndex] = new ComplexFloat(ffte.re * FFTScale, ffte.im * FFTScale);
 
         }
 

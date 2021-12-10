@@ -19,13 +19,6 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
-using System;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -69,16 +62,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             switch (bands)
             {
-                case Bands.band8:
-                    return m_band8;
-                case Bands.band16:
-                    return m_band16;
-                case Bands.band32:
-                    return m_band32;
-                case Bands.band64:
-                    return m_band64;
-                case Bands.band128:
-                    return m_band128;
+                case Bands.band8: return m_band8;
+                case Bands.band16: return m_band16;
+                case Bands.band32: return m_band32;
+                case Bands.band64: return m_band64;
+                case Bands.band128: return m_band128;
             }
 
             return m_band8;

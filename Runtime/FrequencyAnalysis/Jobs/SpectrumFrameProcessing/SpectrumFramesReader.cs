@@ -20,71 +20,74 @@
 
 using Nebukam.JobAssist;
 using System.Collections.Generic;
-using Unity.Burst;
 using Unity.Collections;
 using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-
-    public interface IFTableProvider : IProcessor
-    {
-        NativeArray<FrequencyRange> outputRanges { get; }
-        FrequencyTable table { get; set; }
-    }
-
-    [BurstCompile]
-    public class FTableProvider : Processor<Unemployed>, IFTableProvider
+    public class SpectrumFramesReader : ProcessorGroup
     {
 
         protected bool m_recompute = true;
 
-        protected List<FrequencyRange> m_lockedRanges = new List<FrequencyRange>(50);
-        public List<FrequencyRange> lockedRanges { get { return m_lockedRanges; } }
-
-        protected NativeArray<FrequencyRange> m_outputRanges = default;
-        public NativeArray<FrequencyRange> outputRanges { get { return m_outputRanges; } }
-
-        protected FrequencyTable m_table;
-        public FrequencyTable table {
-            get { return m_table; }
+        public List<SpectrumFrame> m_lockedFrames;
+        public List<SpectrumFrame> lockedFrames
+        {
+            get { return m_lockedFrames; }
             set
             {
-                if(m_table == value) { return; }
-                m_table = value;
+                m_lockedFrames = value;
                 m_recompute = true;
             }
         }
 
-        protected override void InternalLock()
+        protected NativeArray<SpectrumFrameData> m_inputFrameData = default;
+        protected NativeArray<Sample> m_outputFrameSamples = default;
+
+        protected ReadBands m_readBands;
+        protected ReadBrackets m_readBrackets;
+        protected ReadSpectrum m_readSpectrum;
+
+        public SpectrumFramesReader()
         {
-
-            if (!m_recompute) { return; }
-
-            m_lockedRanges.Clear();
-
-            FrequencyRange[] ranges = m_table.ranges;
-            int rangeCount = ranges.Length;
-
-            for(int i = 0; i < rangeCount; i++)
-                m_lockedRanges.Add(ranges[i]);
-
+            Add(ref m_readBands);
+            Add(ref m_readBrackets);
+            Add(ref m_readSpectrum);
         }
 
-        protected override void Prepare(ref Unemployed job, float delta)
+        protected override void Prepare(float delta)
         {
 
-            if (m_recompute) 
+            if (m_recompute)
             {
-                Copy(m_lockedRanges, ref m_outputRanges);
+
+                int count = m_lockedFrames.Count;
+                MakeLength(ref m_inputFrameData, count);
+                MakeLength(ref m_outputFrameSamples, count);
+
+                for (int i = 0; i < count; i++)
+                    m_inputFrameData[i] = m_lockedFrames[i];
+
                 m_recompute = false;
+
             }
+
+            m_readBands.inputFrameData = m_inputFrameData;
+            m_readBands.outputFrameSamples = m_outputFrameSamples;
+
+            m_readBrackets.inputFrameData = m_inputFrameData;
+            m_readBrackets.outputFrameSamples = m_outputFrameSamples;
+
+            m_readSpectrum.inputFrameData = m_inputFrameData;
+            m_readSpectrum.outputFrameSamples = m_outputFrameSamples;
 
         }
 
         protected override void InternalDispose()
         {
-            m_outputRanges.Dispose();
+            base.InternalDispose();
+            m_inputFrameData.Dispose();
+            m_outputFrameSamples.Dispose();
         }
 
     }

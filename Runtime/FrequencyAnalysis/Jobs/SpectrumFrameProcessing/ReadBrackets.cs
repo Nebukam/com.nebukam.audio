@@ -18,50 +18,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-using Unity.Profiling;
-
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-
-    [BurstCompile]
-    public struct FFT4StageJob : IJobParallelFor
+    public class ReadBrackets : AbstractSFrameReader<ReadBracketsJob>
     {
+        #region Inputs
 
-        [ReadOnly]
-        public NativeArray<TFactor> m_inputFactors;
+        protected IFBracketsProvider m_bracketsProvider;
 
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float4> m_outputComplexPair;
+        #endregion
 
-        public int m_offsetIndex;
-
-        public void Execute(int index)
+        protected override int Prepare(ref ReadBracketsJob job, float delta)
         {
 
-            TFactor factor = m_inputFactors[m_offsetIndex + index];
+            if (m_inputsDirty)
+            {
+                if (!TryGetFirstInCompound(out m_bracketsProvider))
+                {
+                    throw new System.Exception("IFBracketsProvider missing.");
+                }
+            }
 
-            float4 
-                offset = math.float4(-1, 1, -1, 1),
-                t = factor.pair,
-                oddCx = m_outputComplexPair[factor.odd],
-                evenCx = m_outputComplexPair[factor.even];
+            job.m_inputBrackets = m_bracketsProvider.outputBrackets;
 
-
-            float4 tRe = t.xxzz * evenCx.xyzw + offset * t.yyww * evenCx.yxwz;
-
-
-            m_outputComplexPair[factor.odd] = oddCx + tRe;
-            m_outputComplexPair[factor.even] = oddCx - tRe;
-
+            return base.Prepare(ref job, delta);
         }
-
     }
 }

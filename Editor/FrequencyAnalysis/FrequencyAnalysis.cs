@@ -128,7 +128,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         }
 
-        public static void SetCurrentFrameList(FrequencyFrameList list)
+        public static void SetCurrentFrameList(SpectrumFrameList list)
         {
 
             data.Clear();

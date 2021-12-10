@@ -25,10 +25,10 @@ using Unity.Mathematics;
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public class FFT4Preparation : ProcessorGroup, IFFT4PermutationsProvider, ITwiddleFactorsProvider
+    public class FFT4Preparation : ProcessorGroup, IFFT4Permutations, ITwiddleFactorsProvider
     {
 
-        protected FFT4PermutationsProvider m_permutations;
+        protected FFT4Permutations m_permutations;
         protected FFT4TwiddleFactorsProvider m_twiddleFactors;
 
         #region IPermutationTableProvider

@@ -18,14 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -48,7 +41,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// to be updated by a FrequencyBandAnalyser
         /// </summary>
         /// <param name="list"></param>
-        public void Add(FrequencyFrameList list)
+        public void Add(SpectrumFrameList list)
         {
             for (int i = 0, n = list.Frames.Count; i < n; i++)
                 Add(list.Frames[i]);
@@ -60,9 +53,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <param name="frame"></param>
         public void Add(SpectrumFrame frame)
         {
-            if (m_frames.IndexOf(frame) != -1) { return; }
-            m_frames.Add(frame);
-            m_dataDic[frame] = new Sample();
+            if (m_frames.TryAddOnce(frame))
+            {
+                m_dataDic[frame] = new Sample();
+            }
         }
 
         /// <summary>
@@ -71,10 +65,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <param name="frame"></param>
         public void Remove(SpectrumFrame frame)
         {
-            int index = m_frames.IndexOf(frame);
-            if (index == -1) { return; }
-            m_frames.RemoveAt(index);
-            m_dataDic.Remove(frame);
+            if (m_frames.TryRemove(frame))
+            {
+                m_dataDic.Remove(frame);
+            }
         }
 
         /// <summary>

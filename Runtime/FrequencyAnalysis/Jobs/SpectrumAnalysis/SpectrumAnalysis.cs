@@ -18,13 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using Nebukam.Collections;
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -65,6 +61,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected List<FrequencyTable> m_lockedTables = new List<FrequencyTable>();
         protected List<FrequencyTable> m_tables = new List<FrequencyTable>();
         protected Dictionary<FrequencyTable, IFrequencyTableProcessor> m_tableProcessors = new Dictionary<FrequencyTable, IFrequencyTableProcessor>();
+        
+        protected ListDictionary<FrequencyTable, SpectrumFrame> m_lockedFrameList = new ListDictionary<FrequencyTable, SpectrumFrame>();
 
         /// <summary>
         /// Adds a table reference to the spectrum analysis
@@ -73,12 +71,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <returns>true if the table wasn't registered yet and has been added, false if the table was already registered</returns>
         public bool Add(FrequencyTable table)
         {
-            
-            if (m_tables.Contains(table)) { return false; }
 
-            m_tables.Add(table);
-            m_recompute = true;
-            return true;
+            if (m_tables.TryAddOnce(table))
+            {
+                m_recompute = true;
+                return true;
+            }
+
+            return false;
 
         }
 
@@ -89,13 +89,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// <returns>true if the table was registered and has been removed, false if the table wasn't registered</returns>
         public bool Remove(FrequencyTable table)
         {
-            
-            int index = m_tables.IndexOf(table);
 
-            if (index == -1) { return false; }
-            m_tables.RemoveAt(index);
-            m_recompute = true;
-            return true;
+            if (m_tables.TryRemove(table))
+            {
+                m_recompute = true;
+                return true;
+            }
+
+            return false;
 
         }
 
@@ -104,7 +105,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="table"></param>
         /// <returns></returns>
-        public IFrequencyTableProcessor this[FrequencyTable table] { 
+        public IFrequencyTableProcessor this[FrequencyTable table]
+        {
             get
             {
                 IFrequencyTableProcessor proc;
@@ -143,15 +145,19 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public bool Add(FrameDataDictionary frameDictionary)
         {
 
-            if (m_dataDictionaries.Contains(frameDictionary)) { return false; }
+            if (m_dataDictionaries.TryAddOnce(frameDictionary)) 
+            {
+                for (int i = 0, n = frameDictionary.frames.Count; i < n; i++)
+                {
+                    SpectrumFrame frame = frameDictionary.frames[i];
+                    Add(frame.table);
+                }
 
-            m_dataDictionaries.Add(frameDictionary);
-            
-            for(int i = 0, n = frameDictionary.frames.Count; i < n; i++)
-                Add(frameDictionary.frames[i].table);
-            
-            m_recompute = true;
-            return true;
+                m_recompute = true;
+                return true;
+            }
+
+            return false;
 
         }
 
@@ -164,27 +170,52 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public bool Remove(FrameDataDictionary frameDictionary)
         {
 
-            int index = m_dataDictionaries.IndexOf(frameDictionary);
+            if (m_dataDictionaries.TryRemove(frameDictionary))
+            {
+                m_recompute = true;
+                return true;
+            }
 
-            if (index == -1) { return false; }
-            m_dataDictionaries.RemoveAt(index);
-            m_recompute = true;
-            return true;
+            return false;
 
         }
 
 
         #endregion
 
+        protected void LockFrames()
+        {
+            m_lockedFrameDataDictionary.Clear();
+            m_lockedFrameList.Clear();
+
+            for (int i = 0, n = m_dataDictionaries.Count; i< n; i++)
+            {
+                FrameDataDictionary dict = m_dataDictionaries[i];
+                m_lockedFrameDataDictionary.Add(dict);
+
+                List<SpectrumFrame> frames = dict.frames;
+                for(int f = 0, fn = frames.Count; f < fn; f++)
+                {
+                    SpectrumFrame frame = frames[f];
+                    m_lockedFrameList.TryAdd(frame.table, frame);
+                }
+            }
+        }
+
         protected override void InternalLock()
         {
+            
+            //if (!m_recompute) { return; }
 
-            if (!m_recompute) { return; }
+            LockFrames();
 
             int tableCount = 0;
 
             m_lockedTables.Clear();
             m_tableProcessors.Clear();
+
+            // Create or re-use an FTableProcessor for 
+            // each registered table
 
             for (int i = 0, n = m_tables.Count; i < n; i++)
             {
@@ -201,6 +232,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
                 m_tableProcessors[table] = tableProcessor;
                 tableProcessor.table = table;
+                tableProcessor.frames = m_lockedFrameList[table];
                 tableCount++;
 
             }
@@ -212,7 +244,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (tableCount < childCount)
             {
                 for (int i = tableCount; i < childCount; i++)
-                    Remove(m_childs[tableCount]).Dispose();
+                    m_childs.Pop().Dispose();
             }
 
         }

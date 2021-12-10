@@ -19,14 +19,11 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -39,7 +36,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class FFT4PairsProvider : ParallelProcessor<FFT4PairsJob>, IFFT4PairsProvider
     {
 
-        protected NativeArray<float4> m_outputComplexPair = new NativeArray<float4>(0, Allocator.Persistent);
+        protected NativeArray<float4> m_outputComplexPair = default;
         public NativeArray<float4> outputComplexPair { get { return m_outputComplexPair; } }
 
         #region Inputs
@@ -48,7 +45,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected FFTParams m_FFTParams;
         protected ISamplesProvider m_samplesProvider;
-        protected IFFT4PermutationsProvider m_permutations;
+        protected IFFT4Permutations m_permutations;
 
         #endregion
 
@@ -82,6 +79,28 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void InternalDispose()
         {
             m_outputComplexPair.Dispose();
+        }
+
+    }
+
+    [BurstCompile]
+    public struct FFT4PairsJob : IJobParallelFor
+    {
+
+        [ReadOnly]
+        public NativeArray<float> m_inputSamples;
+
+        [ReadOnly]
+        public NativeArray<int2> m_permutationTable;
+
+        [WriteOnly]
+        public NativeArray<float4> m_outputComplexPair;
+
+        public void Execute(int index)
+        {
+            var a1 = m_inputSamples[m_permutationTable[index].x];
+            var a2 = m_inputSamples[m_permutationTable[index].y];
+            m_outputComplexPair[index] = math.float4(a1 + a2, 0, a1 - a2, 0);
         }
 
     }

@@ -19,11 +19,9 @@
 // SOFTWARE.
 
 using System;
-using System.Globalization;
-using System.Diagnostics.CodeAnalysis;
+using Unity.Burst;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
-using Unity.Burst;
 
 namespace Nebukam.Audio
 {

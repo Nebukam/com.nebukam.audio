@@ -20,10 +20,8 @@
 
 using Nebukam.JobAssist;
 using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {

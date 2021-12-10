@@ -47,7 +47,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         private const string m_title = "FAnalyser Viewer";
 
-        private static FrequencyFrameList m_frequencyFrameList = null;
+        private static SpectrumFrameList m_frequencyFrameList = null;
         private static AudioClip m_audioClip = null;
         private static float m_currentTime = 0f;
         private static float m_currentScale = 1f;
@@ -60,7 +60,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             window.Refresh();
         }
 
-        public static void ShowWindow(FrequencyFrameList frameList)
+        public static void ShowWindow(SpectrumFrameList frameList)
         {
             m_frequencyFrameList = Prefs.Set(PID_FrameList, frameList);
             ShowWindow();
@@ -81,7 +81,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             m_audioClip = Prefs.Get<AudioClip>(PID_AudioClip, null);
             AudioPlayer.clip = m_audioClip;
 
-            m_frequencyFrameList = Prefs.Get<FrequencyFrameList>(PID_FrameList, null);
+            m_frequencyFrameList = Prefs.Get<SpectrumFrameList>(PID_FrameList, null);
             m_currentTime = Prefs.Get(PID_AudioClipTime, 0f);
             m_previewDuration = Prefs.Get(PID_AudioClipPreviewDuration, 0f);
         }

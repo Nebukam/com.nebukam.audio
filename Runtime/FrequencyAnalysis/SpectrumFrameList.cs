@@ -18,36 +18,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
 using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    [BurstCompile]
-    public struct FFTCMagnitudeJob : IJobParallelFor, IComplexJob
+    [CreateAssetMenu(fileName = "Spectrum Frame List", menuName = "N:Toolkit/Audio/Spectrum Frame List", order = 0)]
+    public class SpectrumFrameList : ScriptableObject
     {
 
-        [ReadOnly]
-        public NativeArray<float> m_params;
+        [Header("Data")]
+        [Tooltip("List of spectrum frames")]
+        public List<SpectrumFrame> Frames = new List<SpectrumFrame>();
 
-        [ReadOnly]
-        private NativeArray<ComplexFloat> m_inputComplexFloats;
-        public NativeArray<ComplexFloat> complexFloats { set { m_inputComplexFloats = value; } }
-
-        public NativeArray<float> m_outputSpectrum;
-
-        public float m_inputScaleFactor;
-
-        public void Execute(int index)
+#if UNITY_EDITOR
+        private void OnValidate()
         {
-            m_outputSpectrum[index] = (m_inputComplexFloats[index].magnitude * m_params[FFTParams.SCALE_FACTOR]);
+            for (int i = 0, n = Frames.Count; i < n; i++)
+            {
+                if(Frames[i] != null)
+                    Frames[i].Validate();
+            }
         }
+#endif
 
     }
+
 }

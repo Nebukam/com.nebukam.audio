@@ -19,37 +19,53 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    [BurstCompile]
-    public struct FFTCPushJob : IJobParallelFor
+    public interface IFrameReadJob
+    {
+        NativeArray<float> inputParams { set; }
+        NativeArray<SpectrumFrameData> inputFrameData { set; }
+        NativeArray<Sample> outputFrameSamples { set; }        
+    }
+
+    public abstract class AbstractSFrameReader<T> : ParallelProcessor<T>
+        where T : struct, Unity.Jobs.IJobParallelFor, IFrameReadJob
     {
 
-        public NativeArray<FFTCElement> m_inputFFTElements;
+        public NativeArray<SpectrumFrameData> inputFrameData { get; set; }
+        public NativeArray<Sample> outputFrameSamples { get; set; }
 
-        [ReadOnly]
-        public NativeArray<float> m_inputSamples;
+        #region Inputs
 
-        public void Execute(int index)
+        protected bool m_inputsDirty = true;
+
+        protected FFTParams m_FFTparams;
+
+        #endregion
+
+        protected override int Prepare(ref T job, float delta)
         {
 
-            FFTCElement ffte = m_inputFFTElements[index];
+            if (m_inputsDirty)
+            {
 
-            ffte = m_inputFFTElements[index];
-            ffte.re = m_inputSamples[index];
-            ffte.im = 0.0f;
+                if(!TryGetFirstInCompound(out m_FFTparams, true))
+                {
+                    throw new System.Exception("FFTParams missing.");
+                }
 
-            m_inputFFTElements[index] = ffte;
+                m_inputsDirty = false;
+
+            }
+
+            job.inputParams = m_FFTparams.outputParams;
+            job.inputFrameData = inputFrameData;
+            job.outputFrameSamples = outputFrameSamples;
+
+            return inputFrameData.Length;
 
         }
 

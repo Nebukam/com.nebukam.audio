@@ -19,11 +19,8 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -65,4 +62,21 @@ namespace Nebukam.Audio.FrequencyAnalysis
         }
 
     }
+
+    [BurstCompile]
+    public struct FFTScaleJob : Unity.Jobs.IJobParallelFor
+    {
+
+        [ReadOnly]
+        public NativeArray<float> m_inputCoefficients;
+
+        public NativeArray<float> m_outputSamples;
+
+        public void Execute(int index)
+        {
+            m_outputSamples[index] = m_outputSamples[index] * m_inputCoefficients[index];
+        }
+
+    }
+
 }

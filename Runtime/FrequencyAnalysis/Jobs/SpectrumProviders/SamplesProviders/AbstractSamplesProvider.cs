@@ -19,13 +19,12 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using Unity.Jobs;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -55,10 +54,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region ISamplesProvider
 
-        protected NativeArray<float> m_outputPrevSpectrum = new NativeArray<float>(0, Allocator.Persistent);
+        protected NativeArray<float> m_outputPrevSpectrum = default;
         public NativeArray<float> outputPrevSpectrum { get { return m_outputPrevSpectrum; } }
 
-        protected NativeArray<float> m_outputSpectrum = new NativeArray<float>(0, Allocator.Persistent);
+        protected NativeArray<float> m_outputSpectrum = default;
         public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
 
         protected Bins m_frequencyBins = Bins.length512;
@@ -81,10 +80,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected float[] m_multiChannelSamples = new float[0];
 
-        protected internal NativeArray<float> m_outputMultiChannelSamples = new NativeArray<float>(0, Allocator.Persistent);
+        protected internal NativeArray<float> m_outputMultiChannelSamples = default;
         public NativeArray<float> outputMultiChannelSamples { get { return m_outputMultiChannelSamples; } }
 
-        protected internal NativeArray<float> m_outputSamples = new NativeArray<float>(0, Allocator.Persistent);
+        protected internal NativeArray<float> m_outputSamples = default;
         public NativeArray<float> outputSamples { get { return m_outputSamples; } }
 
         protected internal AudioClip m_lockedAudioClip;

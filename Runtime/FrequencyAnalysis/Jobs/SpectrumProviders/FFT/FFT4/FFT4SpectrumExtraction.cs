@@ -19,14 +19,11 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using static Unity.Mathematics.math;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -69,6 +66,40 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             return m_FFTParams.numBins/2;
 
+        }
+
+    }
+
+    [BurstCompile]
+    public struct FFT4SpectrumExtractionJob : IJobParallelFor
+    {
+
+        [ReadOnly]
+        public NativeArray<float> m_params;
+
+        [ReadOnly]
+        public NativeArray<float4> m_inputComplexPair;
+
+        [WriteOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> m_outputSpectrum;
+
+        public float m_scaleFactor;
+
+        public void Execute(int index)
+        {
+
+            var x = m_inputComplexPair[index];
+
+            int
+                firstIndex = index * 2,
+                secondIndex = firstIndex + 1;
+
+            float
+                scale = m_scaleFactor * 1.971f; // Match FFTC Scale
+
+            m_outputSpectrum[firstIndex] = length(x.xy) * scale;
+            m_outputSpectrum[secondIndex] = length(x.zw) * scale;
         }
 
     }

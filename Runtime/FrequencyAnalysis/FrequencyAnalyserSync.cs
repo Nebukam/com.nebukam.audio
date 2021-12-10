@@ -18,14 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using System.Numerics;
-using System;
 using Unity.Burst;
+using Unity.Mathematics;
+using UnityEngine;
+using static Unity.Mathematics.math;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {

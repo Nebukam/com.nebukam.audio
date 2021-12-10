@@ -18,39 +18,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FFTCPruneJob : IJob
+    public struct ReadSpectrumJob : IJobParallelFor, IFrameReadJob
     {
 
         [ReadOnly]
-        public NativeArray<float> m_params;
+        private NativeArray<float> m_FFTparams;
+        public NativeArray<float> inputParams { set { m_FFTparams = value; } }
 
-        public NativeArray<ComplexFloat> m_outputComplexFloats;
-        public NativeArray<ComplexFloat> m_inputComplexFloatsFull;
+        [ReadOnly]
+        private NativeArray<SpectrumFrameData> m_inputFrameData;
+        public NativeArray<SpectrumFrameData> inputFrameData { set { m_inputFrameData = value; } }
 
-        public void Execute()
+        [WriteOnly]
+        [NativeDisableContainerSafetyRestriction]
+        private NativeArray<Sample> m_outputFrameSamples;
+        public NativeArray<Sample> outputFrameSamples { set { m_outputFrameSamples = value; } }
+
+        [ReadOnly]
+        public NativeArray<float> m_inputSpectrum;
+
+        public void Execute(int index)
         {
-
-            int numBins = (int)m_params[FFTParams.NUM_BINS];
-            NativeArray<ComplexFloat>.Copy(m_inputComplexFloatsFull, m_outputComplexFloats, numBins);
-
-            // DC and Fs/2 Points are scaled differently, since they have only a real part
-            m_outputComplexFloats[0] = new ComplexFloat(m_outputComplexFloats[0].real / sqrt(2));
-            m_outputComplexFloats[numBins - 1] = new ComplexFloat(m_outputComplexFloats[numBins - 1].real / sqrt(2));
-
+            SpectrumFrameData currentFrame = m_inputFrameData[index];
+            if (currentFrame.extraction != FrequencyExtraction.Raw) { return; }
         }
 
     }

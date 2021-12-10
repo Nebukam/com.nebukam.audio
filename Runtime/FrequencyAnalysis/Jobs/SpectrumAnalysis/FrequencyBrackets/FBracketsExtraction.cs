@@ -19,19 +19,22 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public class FBracketsExtraction : ParallelProcessor<FBracketsExtractionJob>
+
+    public interface IFBracketsProvider : IProcessor
+    {
+        NativeArray<BracketData> outputBrackets { get; }
+        BracketData[] cachedOutput { get; }
+    }
+
+    public class FBracketsExtraction : ParallelProcessor<FBracketsExtractionJob>, IFBracketsProvider
     {
 
-        protected NativeArray<BracketData> m_outputBrackets = new NativeArray<BracketData>(0, Allocator.Persistent);
+        protected NativeArray<BracketData> m_outputBrackets = default;
         public NativeArray<BracketData> outputBrackets { get { return m_outputBrackets; } }
 
         protected BracketData[] m_cachedOutput = new BracketData[0];
@@ -45,7 +48,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected ISpectrumProvider m_inputSpectrumProvider;
 
         #endregion
-        
+
         protected override void InternalLock() { }
 
         protected override int Prepare(ref FBracketsExtractionJob job, float delta)
@@ -53,14 +56,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_inputsDirty)
             {
 
-                if(!TryGetFirstInCompound(out m_frequencyTableProvider)
+                if (!TryGetFirstInCompound(out m_frequencyTableProvider)
                     || !TryGetFirstInCompound(out m_inputSpectrumProvider))
 
 
-                m_inputsDirty = false;
+                    m_inputsDirty = false;
 
             }
-            
+
             NativeArray<FrequencyRange> ranges = m_frequencyTableProvider.outputRanges;
             int numRanges = ranges.Length;
 
@@ -80,7 +83,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             Copy(m_outputBrackets, ref m_cachedOutput);
         }
 
-        protected override void InternalDispose() 
+        protected override void InternalDispose()
         {
             m_outputBrackets.Dispose();
         }

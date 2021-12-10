@@ -18,16 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
@@ -35,7 +25,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
 
         //Preparation
-        protected FFT4PermutationsProvider m_permutations;
+        protected FFT4Permutations m_permutations;
         protected FFT4TwiddleFactorsProvider m_twiddleFactors;
         //Execution
         protected FFT4PairsProvider m_complexPairsProvider;
@@ -51,6 +41,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             Add(ref m_complexPairsProvider);
             Add(ref m_DFTStagesProcessor);
             Add(ref m_spectrumExtraction);
+
+            Add(new FFTScalePost());
         }
 
     }

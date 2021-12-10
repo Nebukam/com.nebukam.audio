@@ -19,12 +19,9 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -48,7 +45,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
         }
 
-        protected NativeArray<float> m_outputCoefficients = new NativeArray<float>(0, Allocator.Persistent);
+        protected NativeArray<float> m_outputCoefficients = default;
         public NativeArray<float> outputCoefficients { get { return m_outputCoefficients; } }
 
         #region Inputs

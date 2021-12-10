@@ -18,37 +18,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-using Unity.Profiling;
-
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-
-    [BurstCompile]
-    public struct FFT4PairsJob : IJobParallelFor
+    public class ReadSpectrum : AbstractSFrameReader<ReadSpectrumJob>
     {
 
-        [ReadOnly]
-        public NativeArray<float> m_inputSamples;
+        protected ISpectrumProvider m_spectrumProvider;
 
-        [ReadOnly]
-        public NativeArray<int2> m_permutationTable;
-
-        [WriteOnly]
-        public NativeArray<float4> m_outputComplexPair;
-
-        public void Execute(int index)
+        protected override int Prepare(ref ReadSpectrumJob job, float delta)
         {
-            var a1 = m_inputSamples[m_permutationTable[index].x];
-            var a2 = m_inputSamples[m_permutationTable[index].y];
-            m_outputComplexPair[index] = math.float4(a1 + a2, 0, a1 - a2, 0);
+            if (m_inputsDirty)
+            {
+                if (!TryGetFirstInCompound(out m_spectrumProvider))
+                {
+                    throw new System.Exception("ISpectrumProvider missing.");
+                }
+            }
+
+            job.m_inputSpectrum = m_spectrumProvider.outputSpectrum;
+
+            return base.Prepare(ref job, delta);
         }
 
     }

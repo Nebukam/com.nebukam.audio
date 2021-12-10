@@ -18,38 +18,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     public class FFTC : FFTransform
     {
 
+        //Preparation
         protected FFTCPreparation m_FFTPreparation;
         protected FFTCPush m_FFTPush;
+        //Execution
         protected FFTCExecution m_FFTExecution;
         protected FFTCUnscramble m_FFTUnscramble;
         protected FFTCPrune m_FFTPrune;
-        protected FFTCMagnitudePass m_FFTMagnitudePass;
+        protected FFTCMagnitude m_FFTMagnitudePass;
 
         public FFTC() 
             : base()
         {
+            //Preparation
             Add(ref m_FFTPreparation);
             Add(ref m_FFTPush);
+            //Execution
             Add(ref m_FFTExecution);
             Add(ref m_FFTUnscramble);
             Add(ref m_FFTPrune);
             Add(ref m_FFTMagnitudePass);
+
+            Add(new FFTScalePost());
         }
 
     }

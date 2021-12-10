@@ -19,14 +19,10 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
 using Unity.Mathematics;
+using static Nebukam.JobAssist.CollectionsUtils;
 using static Unity.Mathematics.math;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -61,7 +57,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected bool m_recompute = true;
 
-        protected NativeArray<TFactor> m_twiddleFactors = new NativeArray<TFactor>(0, Allocator.Persistent);
+        protected NativeArray<TFactor> m_twiddleFactors = default;
         public NativeArray<TFactor> outputFactors { get { return m_twiddleFactors; } }
 
         #region Inputs

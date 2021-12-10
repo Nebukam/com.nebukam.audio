@@ -22,7 +22,6 @@ using Nebukam.JobAssist;
 using Unity.Burst;
 using Unity.Collections;
 using UnityEngine;
-using UnityEngine.Audio;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {

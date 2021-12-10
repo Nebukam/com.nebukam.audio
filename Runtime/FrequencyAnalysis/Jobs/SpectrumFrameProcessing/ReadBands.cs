@@ -18,29 +18,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
-using UnityEngine;
-
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-
-    [BurstCompile]
-    public struct FFTScaleJob : IJobParallelFor
+    public class ReadBands : AbstractSFrameReader<ReadBandsJob>
     {
 
-        [ReadOnly]
-        public NativeArray<float> m_inputCoefficients;
+        #region Inputs
 
-        public NativeArray<float> m_outputSamples;
+        protected IFBandsProvider m_bandsProvider;
 
-        public void Execute(int index)
+        #endregion
+
+        protected override int Prepare(ref ReadBandsJob job, float delta)
         {
-            m_outputSamples[index] = m_outputSamples[index] * m_inputCoefficients[index];
+            
+            if (m_inputsDirty)
+            {
+                if(!TryGetFirstInCompound(out m_bandsProvider))
+                {
+                    throw new System.Exception("IFBandsProvider missing.");
+                }
+            }
+
+            job.m_inputBands8 = m_bandsProvider.Get(Bands.band8).outputBands;
+            job.m_inputBands16 = m_bandsProvider.Get(Bands.band16).outputBands;
+            job.m_inputBands32 = m_bandsProvider.Get(Bands.band32).outputBands;
+            job.m_inputBands64 = m_bandsProvider.Get(Bands.band64).outputBands;
+            job.m_inputBands128 = m_bandsProvider.Get(Bands.band128).outputBands;
+
+            return base.Prepare(ref job, delta);
         }
 
     }

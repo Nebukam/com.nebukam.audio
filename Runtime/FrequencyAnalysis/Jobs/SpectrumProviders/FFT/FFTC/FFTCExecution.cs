@@ -19,15 +19,11 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    
+
     [BurstCompile]
     public class FFTCExecution : Processor<FFTCExecutionJob>
     {
@@ -60,10 +56,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
 
             job.m_params = m_inputParams.outputParams;
-            job.m_inputComplexFloatsFull = m_inputFFTPreparation.outputComplexFloatsFull;
-            job.complexFloats = m_inputFFTPreparation.outputComplexFloats;
-            job.m_inputFFTElements = m_inputFFTPreparation.outputFFTElements;
             job.m_inputSamples = m_inputSamplesProvider.outputSamples;
+            job.m_inputFFTElements = m_inputFFTPreparation.outputFFTElements;
+            job.m_inputComplexSamples = m_inputFFTPreparation.outputComplexSamples;
+            job.m_outputComplexSpectrum = m_inputFFTPreparation.outputComplexSpectrum;
+            
 
         }
 

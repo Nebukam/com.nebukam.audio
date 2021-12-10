@@ -19,49 +19,57 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-using Unity.Profiling;
+using Unity.Collections;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FFT4SpectrumExtractionJob : IJobParallelFor
+    public class FFTScalePost : ParallelProcessor<FFTScalePostJob>
     {
 
-        [ReadOnly]
-        public NativeArray<float> m_params;
+        #region Inputs
 
-        [ReadOnly] 
-        public NativeArray<float4> m_inputComplexPair;
+        protected bool m_inputsDirty = true;
 
-        [WriteOnly]
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float> m_outputSpectrum;
+        protected ISamplesProvider m_inputSamplesProvider;
 
-        public float m_scaleFactor;
+        #endregion
 
-        public void Execute(int index)
+        protected override int Prepare(ref FFTScalePostJob job, float delta)
         {
 
-            var x = m_inputComplexPair[index];
+            if (m_inputsDirty)
+            {
 
-            int
-                firstIndex = index * 2,
-                secondIndex = firstIndex + 1;
+                if (!TryGetFirstInCompound(out m_inputSamplesProvider))
+                {
+                    throw new System.Exception("ISamplesProvider missing.");
+                }
 
-            float
-                scale = m_scaleFactor * 1.971f; // Match FFTC Scale
+                m_inputsDirty = false;
 
-            m_outputSpectrum[firstIndex] = length(x.xy) * scale;
-            m_outputSpectrum[secondIndex] = length(x.zw) * scale;
+            }
+
+            job.m_outputSamples = m_inputSamplesProvider.outputSamples;
+            return m_inputSamplesProvider.outputSamples.Length;
+
         }
 
     }
+
+    [BurstCompile]
+    public struct FFTScalePostJob : Unity.Jobs.IJobParallelFor
+    {
+
+        public NativeArray<float> m_outputSamples;
+
+        public void Execute(int index)
+        {
+            m_outputSamples[index] = m_outputSamples[index] * 2.0f;
+        }
+
+    }
+
 }

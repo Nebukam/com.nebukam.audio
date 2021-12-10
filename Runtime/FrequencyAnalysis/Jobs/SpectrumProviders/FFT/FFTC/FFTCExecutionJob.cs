@@ -18,35 +18,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Jobs;
-using Unity.Mathematics;
 using static Unity.Mathematics.math;
-using UnityEngine;
-using Unity.Profiling;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     [BurstCompile]
-    public struct FFTCExecutionJob : IJob, IComplexJob
+    public struct FFTCExecutionJob : IJob
     {
 
         [ReadOnly]
         public NativeArray<float> m_params;
 
-        public NativeArray<ComplexFloat> m_outputComplexFloats;
-        public NativeArray<ComplexFloat> complexFloats { set { m_outputComplexFloats = value; } }
-
-        public NativeArray<ComplexFloat> m_inputComplexFloatsFull;
-
-        public NativeArray<FFTCElement> m_inputFFTElements;
-
         [ReadOnly]
         public NativeArray<float> m_inputSamples;
+
+        public NativeArray<FFTCElement> m_inputFFTElements;
+        public NativeArray<ComplexFloat> m_outputComplexSpectrum;
+        public NativeArray<ComplexFloat> m_inputComplexSamples;
+        
 
         public void Execute()
         {

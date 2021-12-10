@@ -19,30 +19,36 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
 using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
     public interface IFrequencyTableProcessor
     {
+
         FrequencyTable table { get; set; }
+
         FBandsProcessor bandsExtraction { get; }
         FBracketsExtraction bracketsExtraction { get; }
+
+        SpectrumFramesReader framesReader { get; }
+
     }
 
     public class FTableProcessor : ProcessorChain, IFrequencyTableProcessor
     {
 
         protected FTableProvider m_frequencyTableProvider;
-        
-        protected FTableDataExtraction m_spectrumDataExtraction;
-        public FTableDataExtraction spectrumDataExtraction { get { return m_spectrumDataExtraction; } }
+
+        protected FBandsProcessor m_frequencyBandsExtraction;
+        public FBandsProcessor bandsExtraction { get { return m_frequencyBandsExtraction; } }
+
+        protected FBracketsExtraction m_frequencyBracketsExtraction;
+        public FBracketsExtraction bracketsExtraction { get { return m_frequencyBracketsExtraction; } }
+
+        protected SpectrumFramesReader m_spectrumFramesReader;
+        public SpectrumFramesReader framesReader { get { return m_spectrumFramesReader; } }
 
         public FrequencyTable table
         {
@@ -50,14 +56,24 @@ namespace Nebukam.Audio.FrequencyAnalysis
             set { m_frequencyTableProvider.table = value; }
         }
 
-        public FBandsProcessor bandsExtraction { get { return m_spectrumDataExtraction.bandsExtraction; } }
-
-        public FBracketsExtraction bracketsExtraction { get { return m_spectrumDataExtraction.bracketsExtraction; } }
+        public List<SpectrumFrame> frames
+        {
+            get { return m_spectrumFramesReader.lockedFrames; }
+            set { m_spectrumFramesReader.lockedFrames = value; }
+        }
 
         public FTableProcessor()
         {
+            // Prepare frequency table
             Add(ref m_frequencyTableProvider);
-            Add(ref m_spectrumDataExtraction);
+
+            // Extract data
+            Add(ref m_frequencyBandsExtraction);
+            Add(ref m_frequencyBracketsExtraction);
+            m_frequencyBracketsExtraction.chunkSize = 1;
+
+            // Read data
+            Add(ref m_spectrumFramesReader);
         }
 
     }

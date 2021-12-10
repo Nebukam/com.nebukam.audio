@@ -19,12 +19,9 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -46,10 +43,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected float[] m_rawSpectrum;
 
-        protected NativeArray<float> m_outputPrevSpectrum = new NativeArray<float>(0, Allocator.Persistent);
+        protected NativeArray<float> m_outputPrevSpectrum = default;
         public NativeArray<float> outputPrevSpectrum { get { return m_outputPrevSpectrum; } }
 
-        protected NativeArray<float> m_outputSpectrum = new NativeArray<float>(0, Allocator.Persistent);
+        protected NativeArray<float> m_outputSpectrum = default;
         public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
 
         public int channel { get; set; } = 0;

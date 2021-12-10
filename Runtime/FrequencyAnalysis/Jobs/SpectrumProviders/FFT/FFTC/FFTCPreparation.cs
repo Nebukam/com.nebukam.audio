@@ -19,26 +19,31 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    
+
+    public interface IComplexProvider : IProcessor
+    {
+        NativeArray<ComplexFloat> outputComplexSpectrum { get; }
+    }
+
     [BurstCompile]
-    public class FFTCPreparation : AbstractComplexProvider<FFTCPreparationJob>
+    public class FFTCPreparation : ParallelProcessor<FFTCPreparationJob>, IComplexProvider
     {
 
         protected bool m_recompute = true;
 
-        protected NativeArray<ComplexFloat> m_outputComplexFloatsFull = new NativeArray<ComplexFloat>(0, Allocator.Persistent);
-        public NativeArray<ComplexFloat> outputComplexFloatsFull { get { return m_outputComplexFloatsFull; } }
+        protected NativeArray<ComplexFloat> m_outputComplexSpectrum = default;
+        public NativeArray<ComplexFloat> outputComplexSpectrum { get { return m_outputComplexSpectrum; } }
 
-        protected NativeArray<FFTCElement> m_outputFFTElements = new NativeArray<FFTCElement>(0, Allocator.Persistent);
+        protected NativeArray<ComplexFloat> m_outputComplexSamples = default;
+        public NativeArray<ComplexFloat> outputComplexSamples { get { return m_outputComplexSamples; } }
+
+        protected NativeArray<FFTCElement> m_outputFFTElements = default;
         public NativeArray<FFTCElement> outputFFTElements { get { return m_outputFFTElements; } }
 
         protected internal uint m_outputFFTLogN = 0;
@@ -46,35 +51,41 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Inputs
 
+        protected bool m_inputsDirty = true;
+
         protected FFTParams m_inputParams;
         protected ISamplesProvider m_inputSamplesProvider;
 
         #endregion
 
-        protected override void Prepare(ref FFTCPreparationJob job, float delta)
+        protected override int Prepare(ref FFTCPreparationJob job, float delta)
         {
 
             if (m_inputsDirty)
             {
 
                 if (!TryGetFirstInCompound(out m_inputParams)
-                    || !TryGetFirstInCompound(out m_inputSamplesProvider, true))
+                    || !TryGetFirstInCompound(out m_inputSamplesProvider))
                 {
                     throw new System.Exception("ISamplesProvider missing.");
                 }
 
+                m_inputsDirty = false;
+
             }
 
-            m_recompute = !MakeLength(ref m_outputFFTElements, m_inputParams.numSamples);
-            MakeLength(ref m_outputComplexFloatsFull, m_inputParams.numSamples);
+            int numSamples = m_inputParams.numSamples;
+
+            m_recompute = !MakeLength(ref m_outputFFTElements, numSamples);
+            MakeLength(ref m_outputComplexSpectrum, m_inputParams.numBins);
+            MakeLength(ref m_outputComplexSamples, numSamples);
             
             job.m_recompute = m_recompute;
-            job.m_params = m_inputParams.outputParams;
-            job.complexFloats = m_outputComplexFloats;
-            job.m_outputFFTElements = m_outputFFTElements;
-            job.m_inputSamples = m_inputSamplesProvider.outputSamples;
+            job.numSamples = numSamples;
+            job.FFTLogN = (uint)m_inputParams.FFTLogN;
+            job.m_outputFFTElements = m_outputFFTElements;            
 
-            base.Prepare(ref job, delta);
+            return numSamples;
 
         }
 
@@ -86,7 +97,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected override void InternalDispose()
         {
             base.InternalDispose();
-            m_outputComplexFloatsFull.Dispose();
+            m_outputComplexSpectrum.Dispose();
+            m_outputComplexSamples.Dispose();
             m_outputFFTElements.Dispose();
         }
     }

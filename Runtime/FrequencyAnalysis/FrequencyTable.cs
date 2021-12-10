@@ -20,16 +20,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using UnityEditor;
-using Unity.Mathematics;
-using Unity.Burst;
-using Unity.Jobs;
 using Unity.Collections;
-using static Nebukam.JobAssist.CollectionsUtils;
+using Unity.Mathematics;
+using UnityEditor;
+using UnityEngine;
 
 
 namespace Nebukam.Audio.FrequencyAnalysis
@@ -342,7 +336,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         static FrequencyTable()
         {
             __bandTypes = new Bands[] { Bands.band8, Bands.band16, Bands.band32, Bands.band64, Bands.band128 };
-            __binsTypes = new Bins[] { Bins.length512, Bins.length1024, Bins.length2048, Bins.length4096 };
+            __binsTypes = new Bins[] { Bins.length256, Bins.length512, Bins.length1024, Bins.length2048, Bins.length4096 };
         }
 
         #endregion
@@ -488,16 +482,15 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             if (loadedFrequencyTableList != null)
             {
-                int index = loadedFrequencyTableList.IndexOf(this);
-                if (index != -1)
+
+                if (loadedFrequencyTableList.TryRemove(this))
                 {
                     m_staticIndex = -1;
-                    loadedFrequencyTableList.RemoveAt(index);
-
                     for (int i = 0; i < loadedFrequencyTableList.Count; i++)
                         loadedFrequencyTableList[i].m_staticIndex = i;
 
                 }
+
             }
 
         }

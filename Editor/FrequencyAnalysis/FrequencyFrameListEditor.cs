@@ -33,7 +33,7 @@ using static Nebukam.Editor.EditorDrawer;
 namespace Nebukam.Audio.FrequencyAnalysis.Editor
 {
 
-    [CustomEditor(typeof(FrequencyFrameList))]
+    [CustomEditor(typeof(SpectrumFrameList))]
     public class FrequencyFrameListEditor : UnityEditor.Editor
     {
 
@@ -43,7 +43,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         internal ReorderableList m_listDrawer;
         internal SerializedProperty m_fflistSerialized;
-        internal FrequencyFrameList m_fflist;
+        internal SpectrumFrameList m_fflist;
 
         internal Rect m_lastRectSize = new Rect(0,0,0,0);
         internal int m_activeIndex = 0;
@@ -73,7 +73,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             m_listDrawer.onAddCallback = OnListItemAdded;
             m_listDrawer.elementHeightCallback = OnListElementHeight;
 
-            m_fflist = target as FrequencyFrameList;
+            m_fflist = target as SpectrumFrameList;
             if (m_sizes.Length != m_fflist.Frames.Count)
                 m_sizes = new float[m_fflist.Frames.Count];
 
@@ -82,7 +82,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         public override void OnInspectorGUI()
         {
 
-            m_fflist = target as FrequencyFrameList;
+            m_fflist = target as SpectrumFrameList;
             serializedObject.Update();
 
             __RequireRectUpdate(true);

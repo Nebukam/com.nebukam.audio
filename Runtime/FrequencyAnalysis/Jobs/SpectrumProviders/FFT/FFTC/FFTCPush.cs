@@ -19,15 +19,12 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using Unity.Collections;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    
+
     [BurstCompile]
     public class FFTCPush : ParallelProcessor<FFTCPushJob>
     {
@@ -63,6 +60,30 @@ namespace Nebukam.Audio.FrequencyAnalysis
             job.m_inputSamples = m_inputSamplesProvider.outputSamples;
 
             return m_FFTParams.numSamples;
+
+        }
+
+    }
+
+    [BurstCompile]
+    public struct FFTCPushJob : Unity.Jobs.IJobParallelFor
+    {
+
+        public NativeArray<FFTCElement> m_inputFFTElements;
+
+        [ReadOnly]
+        public NativeArray<float> m_inputSamples;
+
+        public void Execute(int index)
+        {
+
+            FFTCElement ffte = m_inputFFTElements[index];
+
+            ffte = m_inputFFTElements[index];
+            ffte.re = m_inputSamples[index];
+            ffte.im = 0.0f;
+
+            m_inputFFTElements[index] = ffte;
 
         }
 

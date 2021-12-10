@@ -19,25 +19,21 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Burst;
-using Unity.Mathematics;
-using UnityEngine;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
     public class FBandExtraction : ParallelProcessor<FBandExtractionJob>
     {
 
-        protected NativeArray<float> m_outputBands = new NativeArray<float>(0, Allocator.Persistent);
+        protected NativeArray<float> m_outputBands = default;
         public NativeArray<float> outputBands { get { return m_outputBands; } }
 
         protected float[] m_cachedOutput = new float[0];
         public float[] cachedOutput { get { return m_cachedOutput; } }
 
-        protected NativeArray<BandInfos> m_bandInfos = new NativeArray<BandInfos>(0, Allocator.Persistent);
+        protected NativeArray<BandInfos> m_bandInfos = default;
         public NativeArray<BandInfos> bandInfos { get { return m_bandInfos; } }
 
         protected Bands m_lockedBands = Bands.band8;

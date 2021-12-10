@@ -19,17 +19,61 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using System.Collections.Generic;
-using Unity.Collections;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
-using Unity.Profiling;
+using static Nebukam.JobAssist.CollectionsUtils;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
+
+    public interface IFFT4Permutations : IProcessor
+    {
+        NativeArray<int2> outputPermutations { get; }
+    }
+
+    public class FFT4Permutations : Processor<FFT4PermutationsJob>, IFFT4Permutations
+    {
+
+        protected bool m_recompute = true;
+
+        protected NativeArray<int2> m_outputPermutations = default;
+        public NativeArray<int2> outputPermutations { get { return m_outputPermutations; } }
+
+        #region Inputs
+
+        protected bool m_inputsDirty = true;
+
+        protected FFTParams m_FFTParams;
+        protected ISpectrumProvider m_spectrumProvider;
+
+        #endregion
+
+        protected override void Prepare(ref FFT4PermutationsJob job, float delta)
+        {
+            if (m_inputsDirty)
+            {
+                if(!TryGetFirstInCompound(out m_FFTParams))
+                {
+
+                }
+            }
+
+            m_recompute = !MakeLength(ref m_outputPermutations, m_FFTParams.numBins);
+
+            job.m_recompute = m_recompute;
+            job.m_params = m_FFTParams.outputParams;
+            job.m_permutationTable = m_outputPermutations;
+
+        }
+
+        protected override void InternalDispose()
+        {
+            m_outputPermutations.Dispose();
+        }
+
+    }
 
     [BurstCompile]
     public struct FFT4PermutationsJob : IJob
@@ -80,4 +124,5 @@ namespace Nebukam.Audio.FrequencyAnalysis
         }
 
     }
+
 }

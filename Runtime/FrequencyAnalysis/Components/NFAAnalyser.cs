@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using Unity.Mathematics;
+using Nebukam.Common;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -57,21 +58,18 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         private void OnEnable()
         {
+            
             if(m_registeredAnalysers == null)
                 m_registeredAnalysers = new List<NFAAnalyser>();
 
-            if (m_registeredAnalysers.IndexOf(this) == -1)
-                m_registeredAnalysers.Add(this);
+            m_registeredAnalysers.AddOnce(this);
+
         }
 
         private void OnDisable()
         {
             if (m_registeredAnalysers == null) { return; }
-
-            int index = m_registeredAnalysers.IndexOf(this);
-
-            if (index != -1)
-                m_registeredAnalysers.RemoveAt(index);
+            m_registeredAnalysers.Remove(this);
         }
 
 #endif

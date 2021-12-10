@@ -19,21 +19,12 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
 using static Unity.Mathematics.math;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
     public class FFT4StageChain : ProcessorChain
     {
-
-        protected int m_lockedNumStages = 0;
 
         #region Inputs
 
@@ -57,29 +48,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
             }
 
             int numStages = (m_FFTParams.FFTLogN - 1);
-            int diff = numStages - m_lockedNumStages;
-            m_lockedNumStages = numStages;
+            int diff = numStages - Count;
 
-            //Debug.Log("m_lockedNumStages : "+ m_lockedNumStages + " / diff = "+ diff);
+            //Debug.Log("numStages : " + numStages + " Count : "+ Count + " / diff = " + diff+ " / m_FFTParams.FFTLogN = "+ m_FFTParams.FFTLogN);
 
             if(diff > 0)
             {
                 // Add
                 for(int i = 0; i < diff; i++)
-                {
-                    FFT4Stage stage = null;
-                    Add(ref stage);
-                }
+                    Add(new FFT4Stage());
+
             }
             else if(diff < 0)
             {
                 // Remove
                 diff = abs(diff);
+
                 for(int i = 0; i < diff; i++)
-                {
-                    FFT4Stage stage = RemoveAt(Count - 1) as FFT4Stage;              
-                    stage.Dispose();
-                }
+                    m_childs.Pop().Dispose();
+
             }
 
         }

@@ -19,17 +19,9 @@
 // SOFTWARE.
 
 using Nebukam.JobAssist;
-using static Nebukam.JobAssist.CollectionsUtils;
-using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Burst;
-using Unity.Jobs;
-using Unity.Mathematics;
-using static Unity.Mathematics.math;
-using UnityEngine;
 
 namespace Nebukam.Audio.FrequencyAnalysis
-{ 
+{
     public class FFT4Execution : ProcessorChain
     {
 
