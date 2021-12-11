@@ -52,8 +52,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             }
 
-            job.m_outputSamples = m_inputSamplesProvider.outputSamples;
-            return m_inputSamplesProvider.outputSamples.Length;
+            job.m_outputSpectrum = m_inputSamplesProvider.outputSpectrum;
+            return m_inputSamplesProvider.outputSpectrum.Length;
 
         }
 
@@ -63,11 +63,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public struct FFTScalePostJob : Unity.Jobs.IJobParallelFor
     {
 
-        public NativeArray<float> m_outputSamples;
+        public NativeArray<float> m_outputSpectrum;
 
         public void Execute(int index)
         {
-            m_outputSamples[index] = m_outputSamples[index] * 2.0f;
+            m_outputSpectrum[index] = m_outputSpectrum[index] * 2.0f;
         }
 
     }

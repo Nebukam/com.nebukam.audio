@@ -24,6 +24,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
     {
         #region Inputs
 
+        protected bool m_inputsDirty = true;
+
         protected IFBracketsProvider m_bracketsProvider;
 
         #endregion
@@ -37,6 +39,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 {
                     throw new System.Exception("IFBracketsProvider missing.");
                 }
+                m_inputsDirty = false;
             }
 
             job.m_inputBrackets = m_bracketsProvider.outputBrackets;

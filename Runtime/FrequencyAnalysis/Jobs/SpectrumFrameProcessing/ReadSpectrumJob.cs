@@ -22,6 +22,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using static Unity.Mathematics.math;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -29,10 +30,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
     [BurstCompile]
     public struct ReadSpectrumJob : IJobParallelFor, IFrameReadJob
     {
-
-        [ReadOnly]
-        private NativeArray<float> m_FFTparams;
-        public NativeArray<float> inputParams { set { m_FFTparams = value; } }
 
         [ReadOnly]
         private NativeArray<SpectrumFrameData> m_inputFrameData;
@@ -48,8 +45,65 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public void Execute(int index)
         {
-            SpectrumFrameData currentFrame = m_inputFrameData[index];
-            if (currentFrame.extraction != FrequencyExtraction.Raw) { return; }
+            SpectrumFrameData frame = m_inputFrameData[index];
+
+            if (frame.extraction != FrequencyExtraction.Raw) { return; }
+
+            int
+                sampleSize = 24000 / m_inputSpectrum.Length,
+                numSamples = max(1, frame.frequenciesRaw.y / sampleSize),
+                startIndex = clamp(frame.frequenciesRaw.x / sampleSize, 0, m_inputSpectrum.Length-1),
+                endIndex = clamp((frame.frequenciesRaw.x / sampleSize + numSamples), 0, m_inputSpectrum.Length),
+                reached = 0;
+
+            float
+                ampBegin = frame.amplitude.x,
+                ampEnd = ampBegin + frame.amplitude.y,
+                inputScale = frame.inputScale,
+                outputScale = frame.outputScale,
+                average = 0f,
+                peak = 0f,
+                sum = 0f;
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+
+                float value = m_inputSpectrum[i] * inputScale;
+
+                if (value >= ampBegin) { reached++; }
+
+                value = clamp(value, ampBegin, ampEnd);
+                float nrmValue = map(value, ampBegin, ampEnd, 0f, 1f);
+
+                peak = max(peak, nrmValue);
+                sum += nrmValue;
+
+            }
+
+            if (frame.tolerance == Tolerance.Strict && reached != numSamples)
+            {
+                peak = 0f;
+                sum = 0f;
+            }
+            else
+            {
+                average = sum / numSamples;
+            }
+
+            m_outputFrameSamples[index] = new Sample()
+            {
+                output = frame.output,
+                average = average * outputScale,
+                peak = peak * outputScale,
+                sum = sum * outputScale,
+                trigger = (peak > 0f ? 1f : 0f)
+            };
+
+        }
+
+        internal float map(float s, float a1, float a2, float b1, float b2)
+        {
+            return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
         }
 
     }

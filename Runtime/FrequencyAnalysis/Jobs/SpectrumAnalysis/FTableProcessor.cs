@@ -18,13 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using Nebukam.Collections;
 using Nebukam.JobAssist;
 using System.Collections.Generic;
+using Unity.Collections;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public interface IFrequencyTableProcessor
+    public interface IFrequencyTableProcessor : IProcessor
     {
 
         FrequencyTable table { get; set; }
@@ -32,7 +34,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         FBandsProcessor bandsExtraction { get; }
         FBracketsExtraction bracketsExtraction { get; }
 
-        SpectrumFramesReader framesReader { get; }
+        IFramesReader framesReader { get; }
 
     }
 
@@ -48,22 +50,20 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public FBracketsExtraction bracketsExtraction { get { return m_frequencyBracketsExtraction; } }
 
         protected SpectrumFramesReader m_spectrumFramesReader;
-        public SpectrumFramesReader framesReader { get { return m_spectrumFramesReader; } }
+        public IFramesReader framesReader { get { return m_spectrumFramesReader; } }
 
         public FrequencyTable table
         {
             get { return m_frequencyTableProvider.table; }
-            set { m_frequencyTableProvider.table = value; }
-        }
-
-        public List<SpectrumFrame> frames
-        {
-            get { return m_spectrumFramesReader.lockedFrames; }
-            set { m_spectrumFramesReader.lockedFrames = value; }
+            set {
+                m_frequencyTableProvider.table = value;
+                m_spectrumFramesReader.table = value;
+            }
         }
 
         public FTableProcessor()
         {
+
             // Prepare frequency table
             Add(ref m_frequencyTableProvider);
 
@@ -74,7 +74,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             // Read data
             Add(ref m_spectrumFramesReader);
-        }
 
+        }
     }
 }

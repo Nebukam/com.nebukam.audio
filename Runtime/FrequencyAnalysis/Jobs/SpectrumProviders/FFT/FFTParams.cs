@@ -93,7 +93,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void InternalDispose()
         {
-            m_outputParams.Dispose();
+            m_outputParams.Release();
         }
 
     }

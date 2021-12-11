@@ -330,7 +330,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
             _r = new Rect(_r.center - s * 0.5f, s);
 
-            Sample sample = data.Get(frame);
+            Sample sample = data[frame];
             FrameLabel labelInfos = new FrameLabel()
             {
                 rect = _r,

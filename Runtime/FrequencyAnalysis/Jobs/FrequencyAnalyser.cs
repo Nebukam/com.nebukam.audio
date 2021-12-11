@@ -22,13 +22,9 @@ using Nebukam.JobAssist;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
-    public interface IFrequencyAnalyser : ISpectrumAnalysis
+    public interface IFrequencyAnalyser : IProcessorChain
     {
-
         SpectrumModifierChain modifiers { get; }
-
-        ISpectrumAnalysis spectrumAnalysis { get; }
-
     }
 
     public class FrequencyAnalyser<T_SPECTRUM_PROVIDER> : ProcessorChain, IFrequencyAnalyser
@@ -41,40 +37,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected SpectrumModifierChain m_modifiers;
         public SpectrumModifierChain modifiers { get { return m_modifiers; } }
 
-        protected SpectrumAnalysis m_spectrumAnalysis;
-        public ISpectrumAnalysis spectrumAnalysis { get { return m_spectrumAnalysis; } }
-
-        #region ISpectrumAnalysis
-
-        // Frequency tables
-
-        public bool Add(FrequencyTable table) 
-        { return m_spectrumAnalysis.Add(table); }
-
-        public bool Remove(FrequencyTable table) 
-        { return m_spectrumAnalysis.Remove(table); }
-
-        public IFrequencyTableProcessor this[FrequencyTable table] 
-        { get { return m_spectrumAnalysis[table]; } }
-
-        public bool TryGetTableProcessor(FrequencyTable table, out IFrequencyTableProcessor processor)
-        { return m_spectrumAnalysis.TryGetTableProcessor(table, out processor); }
-
-        // FrameData Dictionaries
-
-        public bool Add(FrameDataDictionary dictionary)
-        { return m_spectrumAnalysis.Add(dictionary); }
-
-        public bool Remove(FrameDataDictionary dictionary)
-        { return m_spectrumAnalysis.Remove(dictionary); }
-
-        #endregion
-
         public FrequencyAnalyser()
         {
             Add(ref m_spectrumProvider);
             Add(ref m_modifiers);
-            Add(ref m_spectrumAnalysis);
         }
 
     }

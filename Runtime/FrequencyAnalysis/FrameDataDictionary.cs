@@ -19,12 +19,115 @@
 // SOFTWARE.
 
 using System.Collections.Generic;
+using Nebukam;
+using Nebukam.Collections;
+using Nebukam.Signals;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public class FrameDataDictionary
+    public interface IFrameDataDictionary 
     {
+        ISignal<IFrameDataDictionary, SpectrumFrame> onFrameAdded { get; }
+        ISignal<IFrameDataDictionary, SpectrumFrame> onFrameRemoved { get; }
+        ISignal<IFrameDataDictionary, SpectrumFrame, Sample> onDataUpdated { get; }
+
+#if UNITY_EDITOR
+        ISignal<IFrameDataDictionary, SpectrumFrame> onFrameUpdated { get; }
+#endif
+
+        ISignal<IFrameDataDictionary, FrequencyTable> onTableRecordAdded { get; }
+        ISignal<IFrameDataDictionary, FrequencyTable> onTableRecordRemoved { get; }
+
+        List<FrequencyTable> tablesRecord { get; }
+
+        bool updateSignalEnabled { get; set; }
+        int Count { get; }
+        SpectrumFrame this[int i] { get; }
+        Sample this[SpectrumFrame frame] { get; }
+
+        /// <summary>
+        /// Registers a list of FrequencyFrame in this dictionary
+        /// to be updated by a FrequencyBandAnalyser
+        /// </summary>
+        /// <param name="list"></param>
+        void Add(SpectrumFrameList list);
+
+        /// <summary>
+        /// Registers a single FrequencyFrame in this dictionary
+        /// </summary>
+        /// <param name="frame"></param>
+        void Add(SpectrumFrame frame);
+
+        /// <summary>
+        /// Removes a single FrequencyFrame from this dictionary
+        /// </summary>
+        /// <param name="frame"></param>
+        void Remove(SpectrumFrame frame);
+
+        /// <summary>
+        /// Tries to find a Sample associated with a given FrequencyFrame
+        /// </summary>
+        /// <param name="frame"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        bool TryGet(SpectrumFrame frame, out float result);
+
+        /// <summary>
+        /// Tries to find a Sample associated with a given FrequencyFrame
+        /// </summary>
+        /// <param name="frame"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        bool TryGet(SpectrumFrame frame, out Sample result);
+
+        /// <summary>
+        /// Sets the value of a Sample
+        /// </summary>
+        /// <param name="frame"></param>
+        /// <param name="value"></param>
+        void Set(SpectrumFrame frame, Sample value);
+
+        /// <summary>
+        /// Clears the lists & data
+        /// </summary>
+        void Clear();
+    }
+
+    public class FrameDataDictionary : IFrameDataDictionary
+    {
+
+        protected Signal<IFrameDataDictionary, SpectrumFrame> m_onFrameAdded = new Signal<IFrameDataDictionary, SpectrumFrame>();
+        public ISignal<IFrameDataDictionary, SpectrumFrame> onFrameAdded { get { return m_onFrameAdded; } }
+
+        protected Signal<IFrameDataDictionary, SpectrumFrame> m_onFrameRemoved = new Signal<IFrameDataDictionary, SpectrumFrame>();
+        public ISignal<IFrameDataDictionary, SpectrumFrame> onFrameRemoved { get { return m_onFrameRemoved; } }
+
+        protected Signal<IFrameDataDictionary, SpectrumFrame, Sample> m_onDataUpdated = new Signal<IFrameDataDictionary, SpectrumFrame, Sample>();
+        public ISignal<IFrameDataDictionary, SpectrumFrame, Sample> onDataUpdated { get { return m_onDataUpdated; } }
+
+#if UNITY_EDITOR
+
+        protected Signal<IFrameDataDictionary, SpectrumFrame> m_onFrameUpdated = new Signal<IFrameDataDictionary, SpectrumFrame>();
+        public ISignal<IFrameDataDictionary, SpectrumFrame> onFrameUpdated { get { return m_onFrameUpdated; } }
+
+#endif
+
+        protected Signal<IFrameDataDictionary, FrequencyTable> m_onTableRecordAdded = new Signal<IFrameDataDictionary, FrequencyTable>();
+        public ISignal<IFrameDataDictionary, FrequencyTable> onTableRecordAdded { get { return m_onTableRecordAdded; } }
+
+        protected Signal<IFrameDataDictionary, FrequencyTable> m_onTableRecordRemoved = new Signal<IFrameDataDictionary, FrequencyTable>();
+        public ISignal<IFrameDataDictionary, FrequencyTable> onTableRecordRemoved { get { return m_onTableRecordRemoved; } }
+
+        protected ListRecord<FrequencyTable> m_tablesRecord = new ListRecord<FrequencyTable>();
+        public List<FrequencyTable> tablesRecord { get { return m_tablesRecord.list; } }
+
+        protected bool m_dataUpdateSignalEnabled = false;
+        public bool updateSignalEnabled
+        {
+            get { return m_dataUpdateSignalEnabled; }
+            set { m_dataUpdateSignalEnabled = value; }
+        }
 
         protected List<SpectrumFrame> m_frames = new List<SpectrumFrame>();
         protected Dictionary<SpectrumFrame, Sample> m_dataDic = new Dictionary<SpectrumFrame, Sample>();
@@ -56,6 +159,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_frames.TryAddOnce(frame))
             {
                 m_dataDic[frame] = new Sample();
+                m_onFrameAdded.Dispatch(this, frame);
+
+                if(m_tablesRecord.Add(frame.table) == 1)
+                    m_onTableRecordAdded.Dispatch(this, frame.table);
             }
         }
 
@@ -68,25 +175,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (m_frames.TryRemove(frame))
             {
                 m_dataDic.Remove(frame);
+                m_onFrameRemoved.Dispatch(this, frame);
+
+                if (m_tablesRecord.Remove(frame.table) == 0)
+                    m_onTableRecordRemoved.Dispatch(this, frame.table);
             }
         }
 
-        /// <summary>
-        /// Returns the current Sample value associated with a given FrequencyFrame
-        /// </summary>
-        /// <param name="frame"></param>
-        /// <returns></returns>
-        public Sample Get(SpectrumFrame frame)
-        {
-            Sample result;
+        public int Count { get { return m_frames.Count; } }
 
-            if (m_dataDic.TryGetValue(frame, out result))
+        public SpectrumFrame this[int i] { get { return m_frames[i]; } }
+
+        public Sample this[SpectrumFrame frame] { 
+            get 
             {
-                return result;
-            }
-            else
-            {
-                return new Sample();
+                Sample result;
+                if (m_dataDic.TryGetValue(frame, out result))
+                    return result;
+                else
+                    return new Sample();
             }
         }
 
@@ -129,10 +236,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public void Set(SpectrumFrame frame, Sample value)
         {
             Sample previousSample;
+
             if (!m_dataDic.TryGetValue(frame, out previousSample) || !previousSample.ON)
                 value.justTriggered = true;
 
             m_dataDic[frame] = value;
+
+            if (m_dataUpdateSignalEnabled)
+                m_onDataUpdated.Dispatch(this, frame, value);
         }
 
         /// <summary>
@@ -140,6 +251,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         public void Clear()
         {
+            for(int i = 0, n = m_frames.Count; i < n; i++)
+                m_onFrameRemoved.Dispatch(this, m_frames.Pop());
+
+            for (int i = 0, n = m_tablesRecord.Count; i < n; i++)
+                m_onTableRecordRemoved.Dispatch(this, m_tablesRecord.list.Pop());
+
+            m_tablesRecord.Clear();
             m_frames.Clear();
             m_dataDic.Clear();
         }

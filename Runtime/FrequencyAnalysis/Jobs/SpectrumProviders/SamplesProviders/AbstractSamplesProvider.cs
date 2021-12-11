@@ -24,7 +24,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using static Nebukam.JobAssist.CollectionsUtils;
+using static Nebukam.JobAssist.Extensions;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -151,10 +151,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
         {
             m_multiChannelSamples = null;
 
-            m_outputPrevSpectrum.Dispose();
-            m_outputSpectrum.Dispose();
-            m_outputMultiChannelSamples.Dispose();
-            m_outputSamples.Dispose();
+            m_outputPrevSpectrum.Release();
+            m_outputSpectrum.Release();
+            m_outputMultiChannelSamples.Release();
+            m_outputSamples.Release();
         }
 
     }

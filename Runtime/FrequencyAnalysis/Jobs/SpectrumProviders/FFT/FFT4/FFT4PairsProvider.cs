@@ -23,7 +23,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using static Nebukam.JobAssist.CollectionsUtils;
+using static Nebukam.JobAssist.Extensions;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -78,7 +78,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void InternalDispose()
         {
-            m_outputComplexPair.Dispose();
+            m_outputComplexPair.Release();
         }
 
     }

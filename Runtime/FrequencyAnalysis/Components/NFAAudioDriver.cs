@@ -254,7 +254,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (Analyser == null) { return; }
 
             for (int i = 0, n = Drivers.Count; i < n; i++)
-                Drivers[i].Apply(this, Analyser.dataDictionary.Get(Drivers[i].Frame));
+                Drivers[i].Apply(this, Analyser.dataDictionary[Drivers[i].Frame]);
         }
 
 

@@ -7,7 +7,7 @@
   "unityRelease": "17f1",
   "documentationUrl":"https://nebukam.github.io/docs/unity/com.nebukam.audio/",
   "keywords": [
-    "Graphs"
+    "Audio", "FFT", "Audio Reactivity", "Sound", "Frequency Analysis", "Frequency", "Spectrum"
   ],
   "category": "Graphs",
   "author": {
@@ -24,7 +24,8 @@
   "gitDependencies": {
 	"com.nebukam.editor": "https://github.com/Nebukam/com.nebukam.editor.git#0.0.1",
     "com.nebukam.common": "https://github.com/Nebukam/com.nebukam.common.git#0.1.1",
-    "com.nebukam.job-assist": "https://github.com/Nebukam/com.nebukam.job-assist.git#1.1.1"
+    "com.nebukam.job-assist": "https://github.com/Nebukam/com.nebukam.job-assist.git#1.1.1",
+    "com.nebukam.signals": "https://github.com/Nebukam/com.nebukam.signals.git#1.0.1"
   },
   "samples": [
     {

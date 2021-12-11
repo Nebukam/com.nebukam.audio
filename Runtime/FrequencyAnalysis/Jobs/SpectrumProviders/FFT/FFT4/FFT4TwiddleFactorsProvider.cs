@@ -21,7 +21,7 @@
 using Nebukam.JobAssist;
 using Unity.Collections;
 using Unity.Mathematics;
-using static Nebukam.JobAssist.CollectionsUtils;
+using static Nebukam.JobAssist.Extensions;
 using static Unity.Mathematics.math;
 
 namespace Nebukam.Audio.FrequencyAnalysis
@@ -94,7 +94,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void InternalDispose()
         {
-            m_twiddleFactors.Dispose();
+            m_twiddleFactors.Release();
         }
 
     }

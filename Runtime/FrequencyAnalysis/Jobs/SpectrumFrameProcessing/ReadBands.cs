@@ -25,6 +25,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Inputs
 
+        protected bool m_inputsDirty = true;
+
         protected IFBandsProvider m_bandsProvider;
 
         #endregion
@@ -38,6 +40,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 {
                     throw new System.Exception("IFBandsProvider missing.");
                 }
+                m_inputsDirty = false;
             }
 
             job.m_inputBands8 = m_bandsProvider.Get(Bands.band8).outputBands;

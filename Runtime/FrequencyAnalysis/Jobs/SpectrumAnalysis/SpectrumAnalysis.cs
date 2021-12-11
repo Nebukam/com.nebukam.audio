@@ -21,6 +21,7 @@
 using Nebukam.Collections;
 using Nebukam.JobAssist;
 using System.Collections.Generic;
+using Nebukam.Signals;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -32,14 +33,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="table"></param>
         /// <returns>true if the table wasn't registered yet and has been added, falsle if the table was already registered</returns>
-        bool Add(FrequencyTable table);
+        IFrequencyTableProcessor Add(FrequencyTable table);
 
         /// <summary>
         /// Removes a table reference from the Spectrum analysis
         /// </summary>
         /// <param name="table"></param>
         /// <returns>true if the table was registered and has been removed, false if the table wasn't registered</returns>
-        bool Remove(FrequencyTable table);
+        IFrequencyTableProcessor Remove(FrequencyTable table);
 
         IFrequencyTableProcessor this[FrequencyTable table] { get; }
 
@@ -54,31 +55,37 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class SpectrumAnalysis : ProcessorGroup, ISpectrumAnalysis
     {
 
-        protected bool m_recompute = true;
-
         #region Frequency Table management
 
-        protected List<FrequencyTable> m_lockedTables = new List<FrequencyTable>();
-        protected List<FrequencyTable> m_tables = new List<FrequencyTable>();
+        protected ListRecord<FrequencyTable> m_tablesRecord = new ListRecord<FrequencyTable>();
         protected Dictionary<FrequencyTable, IFrequencyTableProcessor> m_tableProcessors = new Dictionary<FrequencyTable, IFrequencyTableProcessor>();
-        
-        protected ListDictionary<FrequencyTable, SpectrumFrame> m_lockedFrameList = new ListDictionary<FrequencyTable, SpectrumFrame>();
 
         /// <summary>
         /// Adds a table reference to the spectrum analysis
         /// </summary>
         /// <param name="table"></param>
-        /// <returns>true if the table wasn't registered yet and has been added, false if the table was already registered</returns>
-        public bool Add(FrequencyTable table)
+        /// <returns>Associated IFrequencyTableProcessor</returns>
+        public IFrequencyTableProcessor Add(FrequencyTable table)
         {
 
-            if (m_tables.TryAddOnce(table))
+            if (m_locked)
             {
-                m_recompute = true;
-                return true;
+                throw new System.Exception("Attempting to add a new FrequencyTable reference while the analysis is locked.");
             }
 
-            return false;
+            if (m_tablesRecord.Add(table) == 1)
+            {
+                
+                IFrequencyTableProcessor proc = new FTableProcessor();
+                proc.table = table;
+                Add(proc);
+
+                m_tableProcessors[table] = proc;
+
+                return proc;
+            }
+
+            return m_tableProcessors[table];
 
         }
 
@@ -86,17 +93,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// Removes a table reference from the Spectrum analysis
         /// </summary>
         /// <param name="table"></param>
-        /// <returns>true if the table was registered and has been removed, false if the table wasn't registered</returns>
-        public bool Remove(FrequencyTable table)
+        /// <returns>Associated IFrequencyTableProcessor</returns>
+        public IFrequencyTableProcessor Remove(FrequencyTable table)
         {
 
-            if (m_tables.TryRemove(table))
+            if (m_locked)
             {
-                m_recompute = true;
-                return true;
+                throw new System.Exception("Attempting to remove a FrequencyTable reference while the analysis is locked.");
             }
 
-            return false;
+            IFrequencyTableProcessor proc = m_tableProcessors[table];
+
+            if (m_tablesRecord.Remove(table) == 0)
+            {
+                m_tableProcessors.Remove(table);
+                proc.Dispose();
+                return proc;
+            }
+
+            return proc;
 
         }
 
@@ -105,17 +120,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="table"></param>
         /// <returns></returns>
-        public IFrequencyTableProcessor this[FrequencyTable table]
-        {
-            get
-            {
-                IFrequencyTableProcessor proc;
-                if (m_tableProcessors.TryGetValue(table, out proc))
-                    return proc;
-                else
-                    return null;
-            }
-        }
+        public IFrequencyTableProcessor this[FrequencyTable table]{ get{ return m_tableProcessors[table]; } }
 
         /// <summary>
         /// 
@@ -132,9 +137,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Frame Data Dictionary management
 
-        protected List<FrameDataDictionary> m_lockedFrameDataDictionary = new List<FrameDataDictionary>();
-        protected List<FrameDataDictionary> m_dataDictionaries = new List<FrameDataDictionary>();
-        //protected Dictionary<FrequencyTable, List<FrameDataDictionary>> m_
+        protected List<IFrameDataDictionary> m_dataDictionaries = new List<IFrameDataDictionary>();
 
         /// <summary>
         /// Adds a FrameDataDictionary reference to the spectrum analysis, as well
@@ -142,18 +145,20 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="frameDictionary"></param>
         /// <returns>true if the table wasn't registered yet and has been added, false if the table was already registered</returns>
-        public bool Add(FrameDataDictionary frameDictionary)
+        public bool Add(IFrameDataDictionary frameDictionary)
         {
 
             if (m_dataDictionaries.TryAddOnce(frameDictionary)) 
             {
-                for (int i = 0, n = frameDictionary.frames.Count; i < n; i++)
+                for (int i = 0, n = frameDictionary.tablesRecord.Count; i < n; i++)
                 {
-                    SpectrumFrame frame = frameDictionary.frames[i];
-                    Add(frame.table);
+                    FrequencyTable table = frameDictionary.tablesRecord[i];
+                    Add(table).framesReader.Add(frameDictionary);
                 }
 
-                m_recompute = true;
+                frameDictionary.onTableRecordAdded.Add(m_onTableRecordAddedDelegate);
+                frameDictionary.onTableRecordRemoved.Add(m_onTableRecordRemovedDelegate);
+
                 return true;
             }
 
@@ -167,12 +172,21 @@ namespace Nebukam.Audio.FrequencyAnalysis
         /// </summary>
         /// <param name="frameDictionary"></param>
         /// <returns>true if the table was registered and has been removed, false if the table wasn't registered</returns>
-        public bool Remove(FrameDataDictionary frameDictionary)
+        public bool Remove(IFrameDataDictionary frameDictionary)
         {
 
             if (m_dataDictionaries.TryRemove(frameDictionary))
             {
-                m_recompute = true;
+
+                for (int i = 0, n = frameDictionary.tablesRecord.Count; i < n; i++)
+                {
+                    FrequencyTable table = frameDictionary.tablesRecord[i];
+                    Remove(table).framesReader.Remove(frameDictionary);
+                }
+
+                frameDictionary.onTableRecordAdded.Remove(m_onTableRecordAddedDelegate);
+                frameDictionary.onTableRecordRemoved.Remove(m_onTableRecordRemovedDelegate);
+
                 return true;
             }
 
@@ -180,74 +194,24 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         }
 
+        private SignalDelegates.Signal<IFrameDataDictionary, FrequencyTable> m_onTableRecordAddedDelegate;
+        private void OnTableRecordAdded(IFrameDataDictionary dictionary, FrequencyTable table)
+        {
+            Add(table).framesReader.Add(dictionary);
+        }
+
+        private SignalDelegates.Signal<IFrameDataDictionary, FrequencyTable> m_onTableRecordRemovedDelegate;
+        private void OnTableRecordRemoved(IFrameDataDictionary dictionary, FrequencyTable table)
+        {
+            Remove(table).framesReader.Remove(dictionary);
+        }
 
         #endregion
 
-        protected void LockFrames()
+        public SpectrumAnalysis()
         {
-            m_lockedFrameDataDictionary.Clear();
-            m_lockedFrameList.Clear();
-
-            for (int i = 0, n = m_dataDictionaries.Count; i< n; i++)
-            {
-                FrameDataDictionary dict = m_dataDictionaries[i];
-                m_lockedFrameDataDictionary.Add(dict);
-
-                List<SpectrumFrame> frames = dict.frames;
-                for(int f = 0, fn = frames.Count; f < fn; f++)
-                {
-                    SpectrumFrame frame = frames[f];
-                    m_lockedFrameList.TryAdd(frame.table, frame);
-                }
-            }
+            m_onTableRecordAddedDelegate = OnTableRecordAdded;
+            m_onTableRecordRemovedDelegate = OnTableRecordRemoved;
         }
-
-        protected override void InternalLock()
-        {
-            
-            //if (!m_recompute) { return; }
-
-            LockFrames();
-
-            int tableCount = 0;
-
-            m_lockedTables.Clear();
-            m_tableProcessors.Clear();
-
-            // Create or re-use an FTableProcessor for 
-            // each registered table
-
-            for (int i = 0, n = m_tables.Count; i < n; i++)
-            {
-
-                FrequencyTable table = m_tables[i];
-                FTableProcessor tableProcessor = null;
-
-                m_lockedTables.Add(table);
-
-                if (i <= Count - 1)
-                    tableProcessor = m_childs[i] as FTableProcessor;
-                else
-                    Add(ref tableProcessor);
-
-                m_tableProcessors[table] = tableProcessor;
-                tableProcessor.table = table;
-                tableProcessor.frames = m_lockedFrameList[table];
-                tableCount++;
-
-            }
-
-            // Flush uneeded processors
-
-            int childCount = Count;
-
-            if (tableCount < childCount)
-            {
-                for (int i = tableCount; i < childCount; i++)
-                    m_childs.Pop().Dispose();
-            }
-
-        }
-
     }
 }

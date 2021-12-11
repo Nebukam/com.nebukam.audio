@@ -24,7 +24,8 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
-
+using Nebukam.JobAssist;
+using static Nebukam.JobAssist.Extensions;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -449,8 +450,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
             if (!m_staticInit) { return; }
             m_staticInit = false;
 
-            globalFrequencyTableDataList.Dispose();
-            globalFrequencyRangeInline.Dispose();
+            globalFrequencyTableDataList.Release();
+            globalFrequencyRangeInline.Release();
             loadedFrequencyTableList.Clear();
             loadedFrequencyTableList = null;
 

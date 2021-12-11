@@ -5,7 +5,8 @@
         "Unity.Mathematics",
         "Unity.Collections",
         "Nebukam.JobAssist",
-        "Nebukam.Common"
+        "Nebukam.Common",
+        "Nebukam.Signals"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

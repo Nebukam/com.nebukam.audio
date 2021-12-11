@@ -26,7 +26,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     public interface IFrameReadJob
     {
-        NativeArray<float> inputParams { set; }
         NativeArray<SpectrumFrameData> inputFrameData { set; }
         NativeArray<Sample> outputFrameSamples { set; }        
     }
@@ -38,30 +37,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public NativeArray<SpectrumFrameData> inputFrameData { get; set; }
         public NativeArray<Sample> outputFrameSamples { get; set; }
 
-        #region Inputs
-
-        protected bool m_inputsDirty = true;
-
-        protected FFTParams m_FFTparams;
-
-        #endregion
-
         protected override int Prepare(ref T job, float delta)
         {
 
-            if (m_inputsDirty)
-            {
-
-                if(!TryGetFirstInCompound(out m_FFTparams, true))
-                {
-                    throw new System.Exception("FFTParams missing.");
-                }
-
-                m_inputsDirty = false;
-
-            }
-
-            job.inputParams = m_FFTparams.outputParams;
             job.inputFrameData = inputFrameData;
             job.outputFrameSamples = outputFrameSamples;
 

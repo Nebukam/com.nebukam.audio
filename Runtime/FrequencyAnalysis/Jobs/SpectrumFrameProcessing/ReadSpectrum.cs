@@ -23,7 +23,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
     public class ReadSpectrum : AbstractSFrameReader<ReadSpectrumJob>
     {
 
+        #region Inputs
+
+        protected bool m_inputsDirty = true;
+
         protected ISpectrumProvider m_spectrumProvider;
+
+        #endregion
 
         protected override int Prepare(ref ReadSpectrumJob job, float delta)
         {
@@ -33,6 +39,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 {
                     throw new System.Exception("ISpectrumProvider missing.");
                 }
+                m_inputsDirty = false;
             }
 
             job.m_inputSpectrum = m_spectrumProvider.outputSpectrum;
