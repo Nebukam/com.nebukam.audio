@@ -201,7 +201,30 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         internal static void RawSpectrum(Rect area, float[] data, float scale = 1f, SpectrumDrawMode draw = SpectrumDrawMode.ALL)
         {
+            float x, h;
+            BracketData b;
 
+            GL.Begin(GL.LINE_STRIP);
+            Color col = Color.gray;
+            
+            int pointWidth = math.max(data.Length / (int)GLArea.width, 1);
+            int pointCount = math.min(data.Length, (int)GLArea.width);
+            int index = 0;
+            float inc = area.width / pointCount;
+
+            for (int i = 0; i < pointCount; i++)
+            {
+                if(index >= data.Length) { continue; }
+                x = i * inc;
+                h = math.clamp(data[index] * scale, 0f, 1f) * area.height;
+                GLCol(col, 0.5f + math.clamp(data[index] * scale, 0f, 1f) * 0.5f);
+                //GL.Vertex3(x, area.height, 0f);
+                GL.Vertex3(x, area.height - h, 0f);
+
+                index += pointWidth;
+            }
+
+            GL.End();
         }
 
         #endregion

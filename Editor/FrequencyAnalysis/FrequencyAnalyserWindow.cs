@@ -294,6 +294,31 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         #endregion
 
+        #region Assembly reload handling
+
+        private void OnEnable()
+        {
+            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
+        }
+
+        private void OnDisable()
+        {
+            AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
+        }
+
+        private void OnBeforeAssemblyReload()
+        {
+
+        }
+
+        private void OnAfterAssemblyReload()
+        {
+            Refresh();
+        }
+
+        #endregion
 
     }
 }

@@ -128,10 +128,16 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
                 __BeginCol(2);
                 MiniLabel("Frequency Table");
+                FrequencyTable prevTable = frame.table;
                 if (ObjectField(ref frame.table) == 1 || frame.table == null)
                 {
                     if (frame.table == null)
                         frame.table = FrequencyTable.tableCommon;
+
+                    // Remap bracket values as the table chenged
+                    if (prevTable != null && frame.extraction == FrequencyExtraction.Bracket)
+                        frame.frequenciesBracket = RemapBrackets(frame.frequenciesBracket, prevTable.Count, frame.table.Count);
+
                     changes++;
                 }
                 __NextCol();
@@ -143,8 +149,9 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                     Bands bandsBefore = frame.bands;
                     if (EnumInlined(ref frame.bands, true, "Bands") == 1)
                     {
+                        // Remap band values as the band changed
+                        frame.frequenciesBand = RemapBands(frame.frequenciesBand, bandsBefore, frame.bands);
                         changes++;
-                        frame.frequenciesBand = RemapFrequencies(frame.frequenciesBand, bandsBefore, frame.bands);
                     }
                 }
                 Space(4f);
@@ -168,7 +175,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 else if (frame.extraction == FrequencyExtraction.Bracket)
                 {
 
-                    nMax = (int)frame.table.Brackets.Count-1;
+                    nMax = (int)frame.table.Count;
 
                     changes += StartSizeSlider(ref frame.frequenciesBracket, new int2(0, nMax), 1, "Brackets [0 - " + nMax + "]");
                     if (frame.frequenciesBracket.y < 1) { frame.frequenciesBracket.y = 1; }
@@ -221,7 +228,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         }
 
-        internal static int2 RemapFrequencies(int2 range, Bands from, Bands to)
+        internal static int2 RemapBands(int2 range, Bands from, Bands to)
         {
             int oMax = (int)from, nMax = (int)to;
 
@@ -231,15 +238,48 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
         }
 
+        internal static int2 RemapBrackets(int2 range, int from, int to)
+        {
+            return new int2(
+                map(range.x, 0, from, 0, to),
+                map(range.y, 0, from, 0, to));
+        }
+
         internal static Rect GetFrameRect(SpectrumFrame f, Rect rel)
         {
-            float w = 1f / (int)f.bands;
 
-            return new Rect(
-                f.frequenciesBand.x * w * rel.width,
-                rel.height - ((f.amplitude.x + f.amplitude.y) * rel.height),
-                f.frequenciesBand.y * w * rel.width,
-                f.amplitude.y * rel.height);
+            float w;
+
+            switch (f.extraction)
+            {
+                case FrequencyExtraction.Bands:
+                    w = 1f / (int)f.bands;
+                    return new Rect(
+                        f.frequenciesBand.x * w * rel.width,
+                        rel.height - ((f.amplitude.x + f.amplitude.y) * rel.height),
+                        f.frequenciesBand.y * w * rel.width,
+                        f.amplitude.y * rel.height);
+                    break;
+                case FrequencyExtraction.Bracket:
+                    w = 1f / (int)f.table.Count;
+                    return new Rect(
+                        f.frequenciesBracket.x * w * rel.width,
+                        rel.height - ((f.amplitude.x + f.amplitude.y) * rel.height),
+                        f.frequenciesBracket.y * w * rel.width,
+                        f.amplitude.y * rel.height);
+                    break;
+                case FrequencyExtraction.Raw:
+                    w = 1f / (int)f.table.Count;
+                    return new Rect(
+                        f.frequenciesBracket.x * w * rel.width,
+                        rel.height - ((f.amplitude.x + f.amplitude.y) * rel.height),
+                        f.frequenciesBracket.y * w * rel.width,
+                        f.amplitude.y * rel.height);
+                    break;
+            }
+
+            return rel;
+
         }
 
         internal static void WriteCache(SpectrumFrame frame, FrequencyTable table)
