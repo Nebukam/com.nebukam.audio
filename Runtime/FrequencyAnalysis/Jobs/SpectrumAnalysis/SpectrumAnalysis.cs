@@ -46,6 +46,14 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         bool TryGetTableProcessor(FrequencyTable table, out IFrequencyTableProcessor processor);
 
+        // FrameData Dictionaries
+
+        bool Add(IFrameDataDictionary dictionary);
+
+        bool Remove(IFrameDataDictionary dictionary);
+
+        bool cacheFrameData { get; set; }
+
     }
 
     /// <summary>
@@ -78,6 +86,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 
                 IFrequencyTableProcessor proc = new FTableProcessor();
                 proc.table = table;
+                proc.framesReader.cacheFrameData = m_cacheFrameData;
                 Add(proc);
 
                 m_tableProcessors[table] = proc;
@@ -102,12 +111,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 throw new System.Exception("Attempting to remove a FrequencyTable reference while the analysis is locked.");
             }
 
-            IFrequencyTableProcessor proc = m_tableProcessors[table];
+            IFrequencyTableProcessor proc = null;
+            m_tableProcessors.TryGetValue(table, out proc);
 
             if (m_tablesRecord.Remove(table) == 0)
             {
                 m_tableProcessors.Remove(table);
-                proc.Dispose();
+                proc?.DisposeAll();
                 return proc;
             }
 
@@ -208,10 +218,25 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #endregion
 
+        protected bool m_cacheFrameData = true;
+        public bool cacheFrameData { 
+            get { return m_cacheFrameData; } 
+            set {
+                
+                if(m_cacheFrameData == value) { return; }
+
+                m_cacheFrameData = value;
+                for (int i = 0, n = Count; i < n; i++ )
+                    (m_childs[i] as IFrequencyTableProcessor).framesReader.cacheFrameData = m_cacheFrameData;
+
+            } 
+        }
+
         public SpectrumAnalysis()
         {
             m_onTableRecordAddedDelegate = OnTableRecordAdded;
             m_onTableRecordRemovedDelegate = OnTableRecordRemoved;
         }
+
     }
 }

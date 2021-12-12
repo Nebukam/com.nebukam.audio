@@ -35,6 +35,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         NativeArray<float> outputPrevSpectrum { get; }
         NativeArray<float> outputSpectrum { get; }
+        float[] cachedOutput { get; }
     }
 
     [BurstCompile]
@@ -49,6 +50,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected NativeArray<float> m_outputSpectrum = default;
         public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
+
+        protected float[] m_cachedOutput = new float[0];
+        public float[] cachedOutput { get { return m_cachedOutput; } }
 
         public int channel { get; set; } = 0;
 
@@ -91,6 +95,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
             Copy(m_outputSpectrum, ref m_outputPrevSpectrum);
             Copy(m_rawSpectrum, ref m_outputSpectrum);
 
+        }
+
+        protected override void Apply(ref T job)
+        {
+            Copy(m_outputSpectrum, ref m_cachedOutput);
         }
 
         protected override void InternalDispose()

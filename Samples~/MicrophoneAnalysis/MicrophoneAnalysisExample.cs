@@ -28,7 +28,7 @@ using Unity.Collections;
 public class MicrophoneAnalysisExample : MonoBehaviour
 {
 
-    protected FrequencyAnalyser<AudioClipSpectrum<SingleChannel, FFTC>> m_frequencyAnalyser;
+    protected SpectrumAnalyser<AudioClipSpectrum<SingleChannel, FFTC>> m_spectrumAnalyser;
     protected FrameDataDictionary m_frameDataDictionary;
 
     public SpectrumFrame Frame;
@@ -54,8 +54,8 @@ public class MicrophoneAnalysisExample : MonoBehaviour
 
         // Setup frequency analyser
 
-        m_frequencyAnalyser = new FrequencyAnalyser<AudioClipSpectrum<SingleChannel, FFTC>>();
-        m_frequencyAnalyser.spectrumProvider.audioClip = m_microphoneClip;
+        m_spectrumAnalyser = new SpectrumAnalyser<AudioClipSpectrum<SingleChannel, FFTC>>();
+        m_spectrumAnalyser.spectrumProvider.audioClip = m_microphoneClip;
 
         // Setup frame data dictionary
 
@@ -64,7 +64,7 @@ public class MicrophoneAnalysisExample : MonoBehaviour
         if (Frame != null)
             m_frameDataDictionary.Add(Frame);
 
-        m_frequencyAnalyser.Add(m_frameDataDictionary);
+        m_spectrumAnalyser.Add(m_frameDataDictionary);
 
     }
 
@@ -78,31 +78,31 @@ public class MicrophoneAnalysisExample : MonoBehaviour
 
         // Update
 
-        m_frequencyAnalyser.spectrumProvider.frequencyBins = FrequencyBins;
-        m_frequencyAnalyser.spectrumProvider.time = (float)(Microphone.GetPosition(m_deviceName)-((int)FrequencyBins*2)) / (float)m_maxFreq;
+        m_spectrumAnalyser.spectrumProvider.frequencyBins = FrequencyBins;
+        m_spectrumAnalyser.spectrumProvider.time = (float)(Microphone.GetPosition(m_deviceName)-((int)FrequencyBins*2)) / (float)m_maxFreq;
 
-        m_frequencyAnalyser.Schedule(0f);
+        m_spectrumAnalyser.Schedule(0f);
 
         if (!ForceComplete)
         {
 
-            m_frequencyAnalyser.Schedule(0f);
+            m_spectrumAnalyser.Schedule(0f);
 
-            if (m_frequencyAnalyser.TryComplete())
+            if (m_spectrumAnalyser.TryComplete())
             {
 
-                Sample sample = m_frameDataDictionary.Get(Frame);
+                Sample sample = m_frameDataDictionary[Frame];
 
                 DrawBands();
 
-                m_frequencyAnalyser.Schedule(0f);
+                m_spectrumAnalyser.Schedule(0f);
 
             }
 
         }
         else
         {
-            m_frequencyAnalyser.Run();
+            m_spectrumAnalyser.Run();
 
             DrawBands();
 
@@ -135,7 +135,7 @@ public class MicrophoneAnalysisExample : MonoBehaviour
 
         //Draw outputSamples (what we got from AudioClip.GetData)
         windowIndex++;
-        NativeArray<float> rawSamples = m_frequencyAnalyser.spectrumProvider.samplesProvider.outputMultiChannelSamples;
+        NativeArray<float> rawSamples = m_spectrumAnalyser.spectrumProvider.samplesProvider.outputMultiChannelSamples;
         for (int i = 0, n = rawSamples.Length; i < n; i++)
         {
             float x = i * (windowWidth / n);
@@ -148,7 +148,7 @@ public class MicrophoneAnalysisExample : MonoBehaviour
         col = Color.yellow;
         col.a = 0.25f;
         windowIndex++;
-        NativeArray<float> outputSamples = m_frequencyAnalyser.spectrumProvider.samplesProvider.outputSamples;
+        NativeArray<float> outputSamples = m_spectrumAnalyser.spectrumProvider.samplesProvider.outputSamples;
         for (int i = 0, n = outputSamples.Length; i < n; i++)
         {
             float x = i * (windowWidth / n);
@@ -161,7 +161,7 @@ public class MicrophoneAnalysisExample : MonoBehaviour
         windowIndex++;
         col = Color.white;
         col.a = 0.25f;
-        NativeArray<float> spectrum = m_frequencyAnalyser.spectrumProvider.outputSpectrum;
+        NativeArray<float> spectrum = m_spectrumAnalyser.spectrumProvider.outputSpectrum;
         for (int i = 0, n = spectrum.Length; i < n; i++)
         {
             float x = i * (windowWidth / n);
@@ -174,7 +174,7 @@ public class MicrophoneAnalysisExample : MonoBehaviour
         windowIndex++;
         col = Color.green;
         col.a = 0.25f;
-        ISpectrumAnalysis dist = m_frequencyAnalyser.spectrumAnalysis;
+        ISpectrumAnalysis dist = m_spectrumAnalyser.spectrumAnalysis;
 
         for (int d = 0; d < dist.Count; d++)
         {
@@ -184,8 +184,8 @@ public class MicrophoneAnalysisExample : MonoBehaviour
             if (tableProcessor == null) { continue; }
 
             FrequencyTable table = tableProcessor.table;
-            FBandsProcessor bandsExt = tableProcessor.spectrumDataExtraction.bandsExtraction;
-            FBracketsExtraction bracketExt = tableProcessor.spectrumDataExtraction.bracketsExtraction;
+            FBandsProcessor bandsExt = tableProcessor.bandsExtraction;
+            FBracketsExtraction bracketExt = tableProcessor.bracketsExtraction;
 
             float z = windowIndex * windowSpacing;
             float inc = windowSpacing / 6f;
@@ -234,6 +234,6 @@ public class MicrophoneAnalysisExample : MonoBehaviour
         // Make sure to DisposeAll on the frequency analyser, as
         // it is using a bulk of unmanaged resources.
         //
-        m_frequencyAnalyser.DisposeAll();
+        m_spectrumAnalyser.DisposeAll();
     }
 }

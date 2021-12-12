@@ -81,7 +81,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         public void Execute(int index)
         {
-            m_outputSpectrum[index] = (m_inputComplexSpectrum[index].magnitude * m_params[FFTParams.SCALE_FACTOR]);
+            m_outputSpectrum[index] = (m_inputComplexSpectrum[index].magnitude * m_params[FFTParams.SCALE_FACTOR]) * 2.0f;
         }
 
     }

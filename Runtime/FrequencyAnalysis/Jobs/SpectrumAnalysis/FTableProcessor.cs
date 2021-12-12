@@ -26,7 +26,7 @@ using Unity.Collections;
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
-    public interface IFrequencyTableProcessor : IProcessor
+    public interface IFrequencyTableProcessor : IProcessorChain
     {
 
         FrequencyTable table { get; set; }

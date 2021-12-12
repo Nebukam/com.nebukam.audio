@@ -44,8 +44,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
             Add(ref m_FFTUnscramble);
             Add(ref m_FFTPrune);
             Add(ref m_FFTMagnitudePass);
-
-            Add(new FFTScalePost());
+            m_FFTMagnitudePass.chunkSize = 32;
         }
 
     }

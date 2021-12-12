@@ -34,6 +34,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
         FrequencyTable table { get; set; }
         void Add(IFrameDataDictionary frameDataDictionary);
         void Remove(IFrameDataDictionary frameDataDictionary);
+        bool cacheFrameData { get; set; }
     }
 
     public class SpectrumFramesReader : ProcessorGroup, IFramesReader
@@ -59,6 +60,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected NativeArray<Sample> m_outputFrameSamples = default;
         public NativeArray<Sample> outputFrameSamples { get { return m_outputFrameSamples; } }
+
+        public bool cacheFrameData { get; set; } = true;
 
         protected ReadBands m_readBands;
         protected ReadBrackets m_readBrackets;
@@ -154,6 +157,13 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         protected override void Prepare(float delta)
         {
+
+            if (!cacheFrameData)
+            {
+                int count = m_lockedFrames.Count;
+                for (int i = 0, n = count; i < n; i++)
+                    m_inputFrameData[i] = m_lockedFrames[i];
+            }
 
             m_readBands.inputFrameData = m_inputFrameData;
             m_readBands.outputFrameSamples = m_outputFrameSamples;

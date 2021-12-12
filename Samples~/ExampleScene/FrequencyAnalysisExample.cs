@@ -27,7 +27,7 @@ using Nebukam.Audio.FrequencyAnalysis;
 public class FrequencyAnalysisExample : MonoBehaviour
 {
 
-    public FrequencyFrameList FrameList;
+    public SpectrumFrameList FrameList;
     public AudioSource AudioSource;
     public SpectrumFrame ScaleID;
     public SpectrumFrame PositionID;
@@ -58,20 +58,36 @@ public class FrequencyAnalysisExample : MonoBehaviour
     void Update()
     {
 
+        
+
+        // Benchmark
+        
+
+
+
         // Update parameters if they changed in the editor in play mode
         m_analyzer.smoothDownRate = SmoothDownRate;
 
-        // Update Analyzer so it compute the current AudioSource
-        m_analyzer.Analyse(SeekForward);
-
-        // Ask Analyzer to write data into a SamplingData Object
-        m_analyzer.ReadDataDictionary(m_frameDataDict);
+        var sw = new System.Diagnostics.Stopwatch();
+        const int iteration = 32;
+        sw.Start();
+        for (var i = 0; i < iteration; i++)
+        {
+            // Update Analyzer so it compute the current AudioSource
+            m_analyzer.Analyse(SeekForward);
+            // Ask Analyzer to write data into a SamplingData Object
+            m_analyzer.ReadDataDictionary(m_frameDataDict);
+        }
+        sw.Stop();
+        // Show the average time.
+        var us = 1000.0 * 1000 * sw.ElapsedTicks / System.Diagnostics.Stopwatch.Frequency;
+        Debug.Log(us / iteration);
 
         // Use the data!
-        float value = m_frameDataDict.Get(ScaleID);
+        float value = m_frameDataDict[ScaleID];
         transform.localScale = new float3(value, value, value);
 
-        transform.localPosition = transform.up * m_frameDataDict.Get(PositionID);
+        transform.localPosition = transform.up * m_frameDataDict[PositionID];
 
     }
 }

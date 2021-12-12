@@ -44,6 +44,7 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         NativeArray<float> outputMultiChannelSamples { get; }
         NativeArray<float> outputSamples { get; }
+        float[] cachedOutput { get; }
 
     }
 
@@ -60,6 +61,9 @@ namespace Nebukam.Audio.FrequencyAnalysis
         protected NativeArray<float> m_outputSpectrum = default;
         public NativeArray<float> outputSpectrum { get { return m_outputSpectrum; } }
 
+        protected float[] m_cachedOutput = new float[0];
+        public float[] cachedOutput{ get { return m_cachedOutput; } }
+        
         protected Bins m_frequencyBins = Bins.length512;
         protected int m_numBins = 512;
         protected int m_numSamples = 1024;
@@ -140,6 +144,11 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
             return m_outputSamples.Length;
 
+        }
+
+        protected override void Apply(ref T job)
+        {
+            Copy(m_outputSpectrum, ref m_cachedOutput);
         }
 
         protected override void InternalUnlock()

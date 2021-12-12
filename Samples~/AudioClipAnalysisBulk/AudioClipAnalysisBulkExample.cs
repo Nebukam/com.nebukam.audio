@@ -112,7 +112,7 @@ public class AudioClipAnalysisBulkExample : MonoBehaviour
             // Once the analysis is complete you can access the frames
             // output directly inside the FrameDataDictionary like so :
 
-            Sample sample = m_frameDataDictionary.Get(Frame);
+            Sample sample = m_frameDataDictionary[Frame];
 
             //Debug.Log(sample.average);
             //DrawBands();

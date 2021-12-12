@@ -41,8 +41,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
             Add(ref m_complexPairsProvider);
             Add(ref m_DFTStagesProcessor);
             Add(ref m_spectrumExtraction);
-
-            Add(new FFTScalePost());
         }
 
     }

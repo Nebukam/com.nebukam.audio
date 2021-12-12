@@ -67,8 +67,8 @@ namespace Nebukam.Audio.FrequencyAnalysis
         public int numSamples { get { return m_samplesProvider.numSamples; } }
 
         public NativeArray<float> outputPrevSpectrum { get { return m_samplesProvider.outputPrevSpectrum; } }
-
         public NativeArray<float> outputSpectrum { get { return m_samplesProvider.outputSpectrum; } }
+        public float[] cachedOutput { get { return m_samplesProvider.cachedOutput; } }
 
         #endregion
 

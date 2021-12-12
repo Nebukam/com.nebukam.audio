@@ -96,10 +96,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
                 secondIndex = firstIndex + 1;
 
             float
-                scale = m_scaleFactor * 1.971f; // Match FFTC Scale
+                scale = m_scaleFactor * 1.971f; // Match FFTC base Scale
 
-            m_outputSpectrum[firstIndex] = length(x.xy) * scale;
-            m_outputSpectrum[secondIndex] = length(x.zw) * scale;
+            m_outputSpectrum[firstIndex] = length(x.xy) * scale * 2.0f;
+            m_outputSpectrum[secondIndex] = length(x.zw) * scale * 2.0f;
         }
 
     }

@@ -10,26 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6ffe124270a1adb40bdd3b25d9cb128e, type: 3}
-  m_Name: Frame B
+  m_Name: Frame - Raw example
   m_EditorClassIdentifier: 
-  ID: B
+  ID: C
   table: {fileID: 11400000, guid: 28d8c9edd9c7a984384feff2300dd738, type: 2}
-  bands: 64
+  bands: 8
   output: 2
-  extraction: 1
+  extraction: 2
   tolerance: 0
   frequenciesBand:
-    x: 12
-    y: 22
+    x: 0
+    y: 1
   frequenciesBracket:
     x: 0
     y: 1
   frequenciesRaw:
-    x: 0
-    y: 1
+    x: 6528
+    y: 5046
   amplitude:
-    x: 0
-    y: 1
+    x: 0.37915406
+    y: 0.1858007
   inputScale: 1
   outputScale: 1
-  color: {r: 0.126157, g: 0.990566, b: 0.29558536, a: 1}
+  color: {r: 0.93452585, g: 0.12549017, b: 0.99215686, a: 1}

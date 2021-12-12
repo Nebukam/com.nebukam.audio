@@ -3,8 +3,10 @@
     "references": [
         "Nebukam.Editor",
         "Nebukam.Common",
+        "Nebukam.Signals",
         "Unity.Mathematics",
-        "Nebukam.Audio"
+        "Nebukam.Audio",
+        "Nebukam.JobAssist"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

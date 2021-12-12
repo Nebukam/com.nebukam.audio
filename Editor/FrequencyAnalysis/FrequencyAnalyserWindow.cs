@@ -41,12 +41,14 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
     {
 
         const string PID_FrameList = "FAW_FrameList";
+        const string PID_FreqTable = "FAW_FreqTable";
         const string PID_AudioClip = "FAW_AudioClip";
         const string PID_AudioClipTime = "FAW_AudioClipTime";
         const string PID_AudioClipPreviewDuration = "FAW_AudioClipPreviewDuration";
 
         private const string m_title = "FAnalyser Viewer";
 
+        private static FrequencyTable m_freqTable = null;
         private static SpectrumFrameList m_frequencyFrameList = null;
         private static AudioClip m_audioClip = null;
         private static float m_currentTime = 0f;
@@ -81,6 +83,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             m_audioClip = Prefs.Get<AudioClip>(PID_AudioClip, null);
             AudioPlayer.clip = m_audioClip;
 
+            m_freqTable = Prefs.Get<FrequencyTable>(PID_FreqTable, null);
             m_frequencyFrameList = Prefs.Get<SpectrumFrameList>(PID_FrameList, null);
             m_currentTime = Prefs.Get(PID_AudioClipTime, 0f);
             m_previewDuration = Prefs.Get(PID_AudioClipPreviewDuration, 0f);
@@ -108,7 +111,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
             #region User data
 
-            __BeginCol(2);
+            __BeginCol(3);
             MiniLabel("Audio Clip");
             if (ObjectField(ref m_audioClip) == 1)
                 Prefs.Update(PID_AudioClip, ref m_audioClip);
@@ -116,9 +119,14 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
             __NextCol();
             MiniLabel("Frame list");
             if (ObjectField(ref m_frequencyFrameList) == 1) { }
-            Prefs.Update(PID_FrameList, ref m_frequencyFrameList);
+                Prefs.Update(PID_FrameList, ref m_frequencyFrameList);
 
             FrequencyAnalysis.SetCurrentFrameList(m_frequencyFrameList);
+
+            __NextCol();
+            MiniLabel("Frequency table");
+            if (ObjectField(ref m_freqTable) == 1) { }
+            Prefs.Update(PID_FreqTable, ref m_freqTable);
 
             __EndCol();
 
@@ -130,14 +138,14 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
 
             __BeginCol(2);
 
-            if (FloatField(ref m_currentScale, "Frequency Band Scaling") == 1)
-                FrequencyAnalysis.freqAnalyser.scale = m_currentScale;
+            if (FloatField(ref m_currentScale, "Frequency Band Scaling") == 1) { }
+                //FrequencyAnalysis.freqAnalyser.scale = m_currentScale;
 
             __NextCol();
 
-            Bins currentBins = FrequencyAnalysis.freqAnalyser.frequencyBins;
+            Bins currentBins = FrequencyAnalysis.spectrumAnalyser.spectrumProvider.frequencyBins;
             if (EnumInlined<Bins>(ref currentBins, true, "Frequency bins") == 1)
-                FrequencyAnalysis.SetFrequencyBins(currentBins);
+                FrequencyAnalysis.spectrumAnalyser.spectrumProvider.frequencyBins = currentBins;
 
             __EndCol();
 
@@ -165,7 +173,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         protected void UpdateAnalyser()
         {
             if (m_audioClip != null && Event.current.type == EventType.Repaint)
-                FrequencyAnalysis.Analyze(m_audioClip, m_currentTime);
+                FrequencyAnalysis.Run(m_audioClip, m_currentTime);
         }
 
         protected void DrawPlayerControls()
@@ -247,8 +255,7 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
         protected void DrawPreview()
         {
 
-            List<SpectrumFrame> frames = FrequencyAnalysis.activeFrames;
-            float[] bands = FrequencyAnalysis.activeBands;
+            List<SpectrumFrame> frames = FrequencyAnalysis.spectrumData.frames;
 
             if (BeginGL(200f))
             {
@@ -257,100 +264,31 @@ namespace Nebukam.Audio.FrequencyAnalysis.Editor
                 c.a = 0.25f;
                 GLFill(c);
 
-                if (bands != null)
-                    FrequencyAnalysis.DrawBandSpectrum(GLArea, bands);
+                IFrequencyTableProcessor tableProc;
+                if (m_freqTable != null)
+                {
+                    if (FrequencyAnalysis.spectrumAnalyser.spectrumAnalysis.TryGetTableProcessor(m_freqTable, out tableProc))
+                    {
+                        FADraw.BandSpectrum(GLArea, tableProc.bandsExtraction.Get(Bands.band128).cachedOutput);
+                        FADraw.BracketSpectrum(GLArea, tableProc.bracketsExtraction.cachedOutput);
+                    }
+                }
 
                 if (frames != null)
                 {
 
-                    FrequencyAnalysis.DrawLines(GLArea, Bands.band64);
+                    FADraw.BandLines(GLArea, Bands.band64);
 
-                    FrequencyAnalysis.__BeginDrawMultipleFrames();
+                    FADraw.__BeginDrawMultipleFrames();
 
                     for (int i = 0; i < frames.Count; i++)
-                        FrequencyAnalysis.DrawFrame(GLArea, frames[i]);
+                        FADraw.Frame(GLArea, frames[i]);
 
-                    FrequencyAnalysis.__EndDrawMultipleFrames();
+                    FADraw.__EndDrawMultipleFrames();
                 }
 
                 EndGL();
             }
-
-        }
-
-        protected void DrawRangePreview()
-        {
-
-            if (BeginGL(200f))
-            {
-
-                if (m_audioClip != null)
-                    FrequencyAnalysis.BatchAnalyze(m_audioClip, m_currentTime, m_previewDuration);
-
-                Color c = Color.black;
-                c.a = 0.25f;
-                GLFill(c);
-
-                Sample[,] samples = FrequencyAnalysis.batchedData;
-                int sampleCount = samples.GetLength(0);
-                int frameCount = samples.GetLength(1);
-                float sampleWidth = GLArea.width / sampleCount;
-                float height = GLArea.height;
-                float maxSampleSize = 1f; //TODO : Expose
-                float sampleHeight = GLArea.height / maxSampleSize;
-
-                for (int s = 0; s < sampleCount; s++)
-                {
-                    for (int f = 0; f < frameCount; f++)
-                    {
-                        SpectrumFrame frame = FrequencyAnalysis.data.frames[f];
-
-                        Sample sample = samples[s, f];
-                        float value = math.clamp(sample, 0f, maxSampleSize) * sampleHeight;
-
-                        if (sample.average == 0f) { continue; }
-
-                        Rect sRect = new Rect(
-                            sampleWidth * s,
-                            height - value,
-                            sampleWidth,
-                            value);
-
-                        if (frame.output == OutputType.Trigger)
-                        {
-                            if (sample.ON)
-                            {
-                                GL.Begin(GL.LINES);
-                                GL.Color(frame.color);
-                                sRect.y = 0f;
-                                sRect.height = height;
-                                sRect.x += sRect.width * 0.5f;
-                                sRect.width = 0f;
-                                GL.Vertex3(sRect.x, sRect.y, 0);
-                                GL.Vertex3(sRect.x, sRect.height, 0);
-                                GL.End();
-                            }
-                        }
-                        else
-                        {
-                            if (sample.output == OutputType.Peak)
-                                sRect.height = 2;
-
-                            GL.Begin(GL.QUADS);
-                            GL.Color(frame.color);
-                            GLRect(sRect);
-                            GL.End();
-                        }
-
-
-                    }
-                }
-
-                EndGL();
-            }
-
-            // Update analyser again since we batch-updated the visualisation is not up-to-date in other inspectors.
-            UpdateAnalyser();
 
         }
 

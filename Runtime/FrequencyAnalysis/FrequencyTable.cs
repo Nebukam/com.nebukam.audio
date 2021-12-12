@@ -25,7 +25,10 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using Nebukam.JobAssist;
+using Nebukam;
+using Nebukam.Collections;
 using static Nebukam.JobAssist.Extensions;
+using Nebukam.Signals;
 
 namespace Nebukam.Audio.FrequencyAnalysis
 {
@@ -234,41 +237,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
     }
 
-    public struct SpectrumInfos
-    {
-
-        public int frequency;
-        public Bins frequencyBins;
-        public int sampleFrequency;
-        public int numChannels;
-        public int numSamples;
-        public int pointCount;
-
-        public int coverage; // Number of samples required to cover all channels
-
-        public SpectrumInfos(Bins bins, AudioClip clip)
-        {
-            frequencyBins = bins;
-            frequency = clip.frequency;
-            numSamples = clip.samples;
-            numChannels = clip.channels;
-            pointCount = (int)bins * 2;
-            coverage = pointCount * numChannels; // Signals are inlined like triangle data
-            sampleFrequency = frequency / (int)bins;
-        }
-
-        public void EnsureCoverage(ref float[] array)
-        {
-            if (array.Length != coverage) { array = new float[coverage]; }
-        }
-
-        public int TimeIndex(float time)
-        {
-            return (int)(frequency * time);
-        }
-
-    }
-
     public struct FrequencyTableData
     {
         int start;
@@ -319,14 +287,6 @@ namespace Nebukam.Audio.FrequencyAnalysis
         #endregion
 
         #region Static
-
-        internal static bool m_staticInit = false;
-
-        internal static List<FrequencyTable> loadedFrequencyTableList;
-        internal int m_staticIndex = -1;
-
-        internal static NativeList<FrequencyTableData> globalFrequencyTableDataList;
-        internal static NativeList<FrequencyRange> globalFrequencyRangeInline;
 
         internal static Bands[] __bandTypes;
         internal static Bins[] __binsTypes;
@@ -432,79 +392,75 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         #region Static registry
 
-        internal static void InitStaticRegistry()
+#if UNITY_EDITOR
+
+        internal static bool __staticInit = false;
+
+        public static List<FrequencyTable> __loadedFrequencyTableList;
+        public static Signal<FrequencyTable> __onFrequencyTableAdded = new Signal<FrequencyTable>();
+        public static Signal<FrequencyTable> __onFrequencyTableRemoved = new Signal<FrequencyTable>();
+
+        internal static void __InitStaticRegistry(FrequencyTable table)
         {
 
-            if (m_staticInit) { return; }
-            m_staticInit = true;
+            if (!__staticInit)
+            {
+                __staticInit = true;
+                __loadedFrequencyTableList = new List<FrequencyTable>();
+            }
 
-            loadedFrequencyTableList = new List<FrequencyTable>();
-            globalFrequencyTableDataList = new NativeList<FrequencyTableData>(100, Allocator.Persistent);
-            globalFrequencyRangeInline = new NativeList<FrequencyRange>(100, Allocator.Persistent);
+            __loadedFrequencyTableList.AddOnce(table);
+            __onFrequencyTableAdded.Dispatch(table);
 
         }
 
-        internal static void CleanupStaticRegistry()
+        internal static void __CleanupStaticRegistry()
         {
 
-            if (!m_staticInit) { return; }
-            m_staticInit = false;
+            if (!__staticInit) { return; }
+            __staticInit = false;
 
-            globalFrequencyTableDataList.Release();
-            globalFrequencyRangeInline.Release();
-            loadedFrequencyTableList.Clear();
-            loadedFrequencyTableList = null;
+            foreach (FrequencyTable table in __loadedFrequencyTableList)
+                __onFrequencyTableRemoved.Dispatch(table);
+
+            __loadedFrequencyTableList.Clear();
+            __loadedFrequencyTableList = null;
 
         }
+
+#endif
 
         void OnEnable()
         {
-#if UNITY_EDITOR
-            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
-            AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
-#endif
+
             BuildTable();
-            InitStaticRegistry();
 
-            if (!loadedFrequencyTableList.Contains(this))
-            {
-                loadedFrequencyTableList.Add(this);
-                m_staticIndex = loadedFrequencyTableList.Count - 1;
-            }
+#if UNITY_EDITOR
+            AssemblyReloadEvents.beforeAssemblyReload += __OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload += __OnAfterAssemblyReload;
 
+            __InitStaticRegistry(this);
+#endif
         }
 
+#if UNITY_EDITOR
         void OnDisable()
         {
-#if UNITY_EDITOR
-            AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
-            AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
-#endif
 
-            if (loadedFrequencyTableList != null)
-            {
+            AssemblyReloadEvents.beforeAssemblyReload -= __OnBeforeAssemblyReload;
+            AssemblyReloadEvents.afterAssemblyReload -= __OnAfterAssemblyReload;
 
-                if (loadedFrequencyTableList.TryRemove(this))
-                {
-                    m_staticIndex = -1;
-                    for (int i = 0; i < loadedFrequencyTableList.Count; i++)
-                        loadedFrequencyTableList[i].m_staticIndex = i;
-
-                }
-
-            }
+            __loadedFrequencyTableList?.TryRemove(this);
+            __onFrequencyTableRemoved.Dispatch(this);
 
         }
 
-
-#if UNITY_EDITOR
-
-        public void OnBeforeAssemblyReload()
+        public void __OnBeforeAssemblyReload()
         {
-            CleanupStaticRegistry();
+            __CleanupStaticRegistry();
         }
 
-        public void OnAfterAssemblyReload()
+        public void __OnAfterAssemblyReload()
         {
 
         }

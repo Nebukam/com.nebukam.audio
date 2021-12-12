@@ -27,6 +27,43 @@ using static Unity.Mathematics.math;
 namespace Nebukam.Audio.FrequencyAnalysis
 {
 
+
+    public struct SpectrumInfos
+    {
+
+        public int frequency;
+        public Bins frequencyBins;
+        public int sampleFrequency;
+        public int numChannels;
+        public int numSamples;
+        public int pointCount;
+
+        public int coverage; // Number of samples required to cover all channels
+
+        public SpectrumInfos(Bins bins, AudioClip clip)
+        {
+            frequencyBins = bins;
+            frequency = clip.frequency;
+            numSamples = clip.samples;
+            numChannels = clip.channels;
+            pointCount = (int)bins * 2;
+            coverage = pointCount * numChannels; // Signals are inlined like triangle data
+            sampleFrequency = frequency / (int)bins;
+        }
+
+        public void EnsureCoverage(ref float[] array)
+        {
+            if (array.Length != coverage) { array = new float[coverage]; }
+        }
+
+        public int TimeIndex(float time)
+        {
+            return (int)(frequency * time);
+        }
+
+    }
+
+
     public struct SamplingInfos
     {
 

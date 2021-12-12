@@ -24,12 +24,10 @@ namespace Nebukam.Audio.FrequencyAnalysis
 {
     public interface ISpectrumAnalyser : IFrequencyAnalyser, ISpectrumAnalysis
     {
-
         ISpectrumAnalysis spectrumAnalysis { get; }
-
     }
 
-    public class SpectrumAnalyser<T_SPECTRUM_PROVIDER> : FrequencyAnalyser<T_SPECTRUM_PROVIDER>
+    public class SpectrumAnalyser<T_SPECTRUM_PROVIDER> : FrequencyAnalyser<T_SPECTRUM_PROVIDER>, ISpectrumAnalyser
         where T_SPECTRUM_PROVIDER : class, ISpectrumProvider, new()
     {
 
@@ -62,14 +60,20 @@ namespace Nebukam.Audio.FrequencyAnalysis
 
         // FrameData Dictionaries
 
-        public bool Add(FrameDataDictionary dictionary)
+        public bool Add(IFrameDataDictionary dictionary)
         { 
             return m_spectrumAnalysis.Add(dictionary); 
         }
 
-        public bool Remove(FrameDataDictionary dictionary)
+        public bool Remove(IFrameDataDictionary dictionary)
         { 
             return m_spectrumAnalysis.Remove(dictionary); 
+        }
+
+        public bool cacheFrameData
+        {
+            get { return m_spectrumAnalysis.cacheFrameData; }
+            set { m_spectrumAnalysis.cacheFrameData = value; }
         }
 
         #endregion

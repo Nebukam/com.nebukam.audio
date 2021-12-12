@@ -29,14 +29,17 @@ using Nebukam.Audio;
 public class AudioClipAnalysisFFTCExample : MonoBehaviour
 {
 
-    protected FrequencyAnalyser<AudioClipSpectrum<SingleChannel, FFTC>> m_frequencyAnalyser;
+    protected SpectrumAnalyser<AudioClipSpectrum<SingleChannel, FFTC>> m_spectrumAnalyser;
     protected FrameDataDictionary m_frameDataDictionary;
 
     public SpectrumFrame Frame;
+    public SpectrumFrameList FrameList;
     public AudioClip Clip;
     public Bins FrequencyBins = Bins.length1024;
     public float Time = 1f;
     public bool ForceComplete = false;
+    public float Scale = 1f;
+    public bool Draw = true;
 
     private void Awake()
     {
@@ -60,7 +63,7 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         // allowing "in advance" analysis.
         //
 
-        m_frequencyAnalyser = new FrequencyAnalyser<AudioClipSpectrum<SingleChannel, FFTC>>();
+        m_spectrumAnalyser = new SpectrumAnalyser<AudioClipSpectrum<SingleChannel, FFTC>>();
 
         //
         // Next, create a FrameDataDictionary.
@@ -74,7 +77,10 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         if (Frame != null)
             m_frameDataDictionary.Add(Frame);
 
-        m_frequencyAnalyser.Add(m_frameDataDictionary);
+        if (FrameList != null)
+            m_frameDataDictionary.Add(FrameList);
+
+        m_spectrumAnalyser.Add(m_frameDataDictionary);
 
     }
 
@@ -94,9 +100,9 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         // But it can be changed anytime.
         //
 
-        m_frequencyAnalyser.spectrumProvider.audioClip = Clip;
-        m_frequencyAnalyser.spectrumProvider.time = Time;
-        m_frequencyAnalyser.spectrumProvider.frequencyBins = FrequencyBins;
+        m_spectrumAnalyser.spectrumProvider.audioClip = Clip;
+        m_spectrumAnalyser.spectrumProvider.time = Time;
+        m_spectrumAnalyser.spectrumProvider.frequencyBins = FrequencyBins;
 
         //
         // The frequency analyser is running on Unity's job system
@@ -106,28 +112,29 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         if (!ForceComplete)
         {
 
-            m_frequencyAnalyser.Schedule(0f);
+            m_spectrumAnalyser.Schedule(0f);
 
             //
             // Check for completion...
             //
-            if (m_frequencyAnalyser.TryComplete())
+            if (m_spectrumAnalyser.TryComplete())
             {
 
                 // Once the analysis is complete you can access the frames
                 // output directly inside the FrameDataDictionary like so :
 
-                Sample sample = m_frameDataDictionary.Get(Frame);
+                Sample sample = m_frameDataDictionary[Frame];
 
                 //Debug.Log(sample.average);
-                DrawBands();
+                if(Draw)
+                    DrawBands();
 
                 // Make sure to schedule it again : if complete, it couldn't
                 // be scheduled through the last call.
                 // Not doing that will introduce a 1-frame gap in anlysis.
                 // However we need to do so _after_ drawing debug, as accessing
                 // the ressources is not permitted once engaged in a job.
-                m_frequencyAnalyser.Schedule(0f);
+                m_spectrumAnalyser.Schedule(0f);
 
             }
         }
@@ -135,8 +142,22 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         {
             // If in a hurry, you can force the job to complete synchronously
             // This is not recommended as it breaks job batching.
-            m_frequencyAnalyser.Run();
-            DrawBands();
+
+            var sw = new System.Diagnostics.Stopwatch();
+            const int iteration = 32;
+            sw.Start();
+            for (var i = 0; i < iteration; i++)
+            {
+                m_spectrumAnalyser.Run();
+            }
+            sw.Stop();
+            // Show the average time.
+            var us = 1000.0 * 1000 * sw.ElapsedTicks / System.Diagnostics.Stopwatch.Frequency;
+            Debug.Log(us / iteration);
+
+
+            if (Draw)
+                DrawBands();
         }
 
 
@@ -169,7 +190,7 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
 
         //Draw outputSamples (what we got from AudioClip.GetData)
         windowIndex++;
-        NativeArray<float> rawSamples = m_frequencyAnalyser.spectrumProvider.samplesProvider.outputMultiChannelSamples;
+        NativeArray<float> rawSamples = m_spectrumAnalyser.spectrumProvider.samplesProvider.outputMultiChannelSamples;
         for (int i = 0, n = rawSamples.Length; i < n; i++)
         {
             float x = i * (windowWidth / n);
@@ -182,7 +203,7 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         col = Color.yellow;
         col.a = 0.25f;
         windowIndex++;
-        NativeArray<float> outputSamples = m_frequencyAnalyser.spectrumProvider.samplesProvider.outputSamples;
+        NativeArray<float> outputSamples = m_spectrumAnalyser.spectrumProvider.samplesProvider.outputSamples;
         for (int i = 0, n = outputSamples.Length; i < n; i++)
         {
             float x = i * (windowWidth / n);
@@ -195,11 +216,11 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         windowIndex++;
         col = Color.white;
         col.a = 0.25f;
-        NativeArray<float> spectrum = m_frequencyAnalyser.spectrumProvider.outputSpectrum;
+        NativeArray<float> spectrum = m_spectrumAnalyser.spectrumProvider.outputSpectrum;
         for (int i = 0, n = spectrum.Length; i < n; i++)
         {
             float x = i * (windowWidth / n);
-            float y = spectrum[i] * 10f;
+            float y = spectrum[i] * Scale;
             float z = windowIndex * windowSpacing;
             Debug.DrawLine(origin + new Vector3(x, 0f, z), origin + new Vector3(x, y, z), col);
         }
@@ -208,7 +229,7 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         windowIndex++;
         col = Color.green;
         col.a = 0.25f;
-        ISpectrumAnalysis dist = m_frequencyAnalyser.spectrumAnalysis;
+        ISpectrumAnalysis dist = m_spectrumAnalyser.spectrumAnalysis;
         
         for (int d = 0; d < dist.Count; d++)
         {
@@ -218,8 +239,8 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
             if (tableProcessor == null) { continue; }
 
             FrequencyTable table = tableProcessor.table;
-            FBandsProcessor bandsExt = tableProcessor.spectrumDataExtraction.bandsExtraction;
-            FBracketsExtraction bracketExt = tableProcessor.spectrumDataExtraction.bracketsExtraction;
+            FBandsProcessor bandsExt = tableProcessor.bandsExtraction;
+            FBracketsExtraction bracketExt = tableProcessor.bracketsExtraction;
 
             float z = windowIndex * windowSpacing;
             float inc = windowSpacing / 6f;
@@ -242,7 +263,7 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         for(int i = 0, n = bands.Length; i < n; i++)
         {
             float x = i * (windowWidth / n);
-            float y = bands[i] * 10f;
+            float y = bands[i] * Scale;
             Debug.DrawLine(origin + new Vector3(x, 0f, z), origin + new Vector3(x, y, z), col);
         }
     }
@@ -253,11 +274,11 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         {
             BracketData bData = brackets[i];
             float x = i * (windowWidth / n);
-            float y = bData.min * 10f;
+            float y = bData.min * Scale;
             Debug.DrawLine(origin + new Vector3(x, 0f, z), origin + new Vector3(x, y, z), Color.blue);
-            float y2 = bData.average * 10f;
+            float y2 = bData.average * Scale;
             Debug.DrawLine(origin + new Vector3(x, y, z), origin + new Vector3(x, y2, z), Color.white);
-            float y3 = bData.max * 10f;
+            float y3 = bData.max * Scale;
             Debug.DrawLine(origin + new Vector3(x, y2, z), origin + new Vector3(x, y3, z), Color.red);
         }
     }
@@ -268,6 +289,6 @@ public class AudioClipAnalysisFFTCExample : MonoBehaviour
         // Make sure to DisposeAll on the frequency analyser, as
         // it is using a bulk of unmanaged resources.
         //
-        m_frequencyAnalyser.DisposeAll();
+        m_spectrumAnalyser.DisposeAll();
     }
 }
