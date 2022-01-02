@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEditor;
-using Nebukam.Editor;
 using static Nebukam.Editor.EditorGLDrawer;
 using static Nebukam.Editor.EditorDrawer;
 
