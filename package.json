@@ -1,6 +1,6 @@
 {
   "name": "com.nebukam.audio",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "displayName": "N:Audio",
   "description": "Audio utils",
   "unity": "2019.4",
@@ -23,8 +23,8 @@
   },
   "gitDependencies": {
 	"com.nebukam.editor": "https://github.com/Nebukam/com.nebukam.editor.git#0.0.1",
-    "com.nebukam.common": "https://github.com/Nebukam/com.nebukam.common.git#0.1.3",
-    "com.nebukam.job-assist": "https://github.com/Nebukam/com.nebukam.job-assist.git#1.1.3",
+    "com.nebukam.common": "https://github.com/Nebukam/com.nebukam.common.git#0.1.4",
+    "com.nebukam.job-assist": "https://github.com/Nebukam/com.nebukam.job-assist.git#1.1.4",
     "com.nebukam.signals": "https://github.com/Nebukam/com.nebukam.signals.git#1.0.1"
   },
   "samples": [
